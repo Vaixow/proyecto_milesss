@@ -24,18 +24,18 @@
         <div class="container-fluid">
             
             <img src="https://www.df.cl/noticias/site/artic/20241210/imag/foto_0000000420241210145656/nuam_HD.png" 
-                 style="height: 70px;" 
+                 style="height: 80px;" 
                  alt="Logo NUAM">
 
-            <span class="navbar-brand mb-0 h1">Sistema de Gestión Califiaciones tributarias</span>
+            <span class="navbar-brand mb-0 h1">Sistema de gestión de calificaciones tributarias nuam</span>
 
             <div class="d-flex align-items-center">
                 <span class="me-3">Usuario: <strong>{{ usuario.username }}</strong></span>
 
                 <form action="{% url 'admin:logout' %}" method="post" class="m-0">
                     {% csrf_token %}
-                    <button type="submit" class="btn btn-sm btn-outline-secondary">
-                        Cerrar Sesión
+                    <button type="submit" class="btn btn-danger btn-sm">
+                        Cerrar sesión
                     </button>
                 </form>
             </div>
