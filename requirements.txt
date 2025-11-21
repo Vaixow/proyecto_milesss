@@ -1,0 +1,5 @@
+django
+gunicorn
+whitenoise
+psycopg2[binary,pool]
+widget-tweaks
