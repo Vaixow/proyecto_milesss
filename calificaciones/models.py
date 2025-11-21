@@ -1,5 +1,3 @@
-# calificaciones/models.py
-
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
@@ -16,16 +14,23 @@ class Calificacion(models.Model):
 
     monto = models.DecimalField(
         max_digits=12,
-        decimal_places=0,   # <-- MONTO ENTERO SIN DECIMALES
+        decimal_places=0,
         verbose_name="Monto (CLP)"
     )
 
+    TIPO_MOVIMIENTO_CHOICES = [
+        ('abono', 'ABONO'),
+        ('cargo', 'CARGO'),
+        ('pago', 'PAGO'),
+        ('reembolso', 'REEMBOLSO'),
+    ]
 
-    factor = models.DecimalField(
-        max_digits=5,
-        decimal_places=0,   # ENTERO SIN DECIMALES
-        verbose_name="Factor",
-        default=1
+
+    tipo_movimiento = models.CharField(
+        max_length=10,
+        choices=TIPO_MOVIMIENTO_CHOICES,
+        default='abono',
+        verbose_name="Tipo de Movimiento"
     )
 
     fecha_registro = models.DateField(

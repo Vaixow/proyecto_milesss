@@ -26,7 +26,24 @@
                     <ul class="list-group list-group-flush">
                         <li class="list-group-item"><strong>ID:</strong> C-{{ calificacion.id|stringformat:"04d" }}</li>
                         <li class="list-group-item"><strong>Monto (CLP):</strong> {{ calificacion.monto|floatformat:0 }}</li>
-                        <li class="list-group-item"><strong>Factor:</strong> {{ calificacion.factor|floatformat:0 }}</li>
+                        <li class="list-group-item">
+                        <strong>Tipo de Movimiento:</strong>
+                        <span class="badge
+                            {% if calificacion.tipo_movimiento == 'abono' %} bg-success
+                            {% elif calificacion.tipo_movimiento == 'cargo' %} bg-danger
+                            {% elif calificacion.tipo_movimiento == 'pago' %} bg-warning text-dark
+                            {% elif calificacion.tipo_movimiento == 'reembolso' %} bg-purple text-white
+                            {% endif %}
+                        ">
+                            {{ calificacion.get_tipo_movimiento_display }}
+                        </span>
+                    </li>
+
+<style>
+    .bg-purple { background-color: #6f42c1 !important; }
+</style>
+
+
                         <li class="list-group-item"><strong>Estado:</strong> <span class="badge bg-warning">{{ calificacion.get_estado_display }}</span></li>
                         <li class="list-group-item"><strong>Usuario de Creación:</strong> {{ calificacion.usuario.username }}</li>
                         <li class="list-group-item"><strong>Fecha de Registro:</strong> {{ calificacion.fecha_registro|date:"d-m-Y" }}</li>
