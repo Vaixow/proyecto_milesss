@@ -104,9 +104,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'es-cl'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'America/Santiago'
 
 USE_I18N = True
 
@@ -139,3 +139,20 @@ LOGIN_URL = '/admin/login/'
 
 LOGOUT_REDIRECT_URL = '/admin/login/' 
 # Esto le dice a Django a dónde ir después de un logout exitoso.
+
+# miles_project/settings.py
+
+# ... (otras configuraciones)
+
+# --- Configuración de Localización (Locale) ---
+
+# settings.py
+
+# Activar el motor de localización
+USE_L10N = True 
+USE_I18N = True # (Asegúrate de que I18N también esté activo)
+
+# Configuraciones para el formato CLP
+DECIMAL_SEPARATOR = ','
+USE_THOUSAND_SEPARATOR = True
+THOUSAND_SEPARATOR = '.'

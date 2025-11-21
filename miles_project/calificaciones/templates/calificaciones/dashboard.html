@@ -22,22 +22,31 @@
 <body>
     <nav class="navbar navbar-light bg-light">
         <div class="container-fluid">
-            <span class="navbar-brand mb-0 h1">Sistema de Gestión</span>
-            <span class="d-flex align-items-center">
-                <span class="me-3">Usuario: **{{ usuario.username }}**</span>
+            
+            <img src="https://www.df.cl/noticias/site/artic/20241210/imag/foto_0000000420241210145656/nuam_HD.png" 
+                 style="height: 70px;" 
+                 alt="Logo NUAM">
 
-                <form action="{% url 'admin:logout' %}" method="post">
+            <span class="navbar-brand mb-0 h1">Sistema de Gestión Califiaciones tributarias</span>
+
+            <div class="d-flex align-items-center">
+                <span class="me-3">Usuario: <strong>{{ usuario.username }}</strong></span>
+
+                <form action="{% url 'admin:logout' %}" method="post" class="m-0">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-sm btn-outline-secondary">
                         Cerrar Sesión
                     </button>
                 </form>
-            </span>
+            </div>
+
         </div>
     </nav>
 
+
+
     <div class="container-fluid mt-4">
-        <h2>Vista de Calificaciones</h2>
+
         <hr>
 
         <div class="row mb-4">
