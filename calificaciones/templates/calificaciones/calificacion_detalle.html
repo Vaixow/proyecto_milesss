@@ -25,8 +25,8 @@
                     </div>
                     <ul class="list-group list-group-flush">
                         <li class="list-group-item"><strong>ID:</strong> C-{{ calificacion.id|stringformat:"04d" }}</li>
-                        <li class="list-group-item"><strong>Monto (CLP):</strong> {{ calificacion.monto|floatformat:2 }}</li>
-                        <li class="list-group-item"><strong>Factor:</strong> {{ calificacion.factor|floatformat:2 }}</li>
+                        <li class="list-group-item"><strong>Monto (CLP):</strong> {{ calificacion.monto|floatformat:0 }}</li>
+                        <li class="list-group-item"><strong>Factor:</strong> {{ calificacion.factor|floatformat:0 }}</li>
                         <li class="list-group-item"><strong>Estado:</strong> <span class="badge bg-warning">{{ calificacion.get_estado_display }}</span></li>
                         <li class="list-group-item"><strong>Usuario de Creación:</strong> {{ calificacion.usuario.username }}</li>
                         <li class="list-group-item"><strong>Fecha de Registro:</strong> {{ calificacion.fecha_registro|date:"d-m-Y" }}</li>

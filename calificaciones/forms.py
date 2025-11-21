@@ -1,20 +1,25 @@
-# calificaciones/forms.py
 from django import forms
 from .models import Calificacion
 
 class CalificacionForm(forms.ModelForm):
-    """
-    Formulario para Crear y Editar calificaciones.
-    Incluye 'monto', 'factor' y ahora 'estado'.
-    """
+
     class Meta:
         model = Calificacion
-        # Incluimos 'estado' para que sea editable
-        fields = ['monto', 'factor', 'estado'] 
-        
-        # Definición de labels para una mejor visualización en el formulario
+        fields = ['monto', 'factor', 'estado']
+
         labels = {
             'monto': 'Monto (CLP)',
             'factor': 'Factor de Multiplicación',
             'estado': 'Estado de Validación',
+        }
+
+        widgets = {
+        'monto': forms.NumberInput(attrs={'step': '1'}),
+        'factor': forms.NumberInput(attrs={'step': '1'}),   # <--- aquí sin decimales
+        }
+
+        help_texts = {
+            'monto': 'Ingrese el monto en pesos chilenos (CLP).',
+            'factor': 'Ingrese el factor de multiplicación (por ejemplo, 1.00).',
+            'estado': 'Seleccione el estado de la calificación.',
         }

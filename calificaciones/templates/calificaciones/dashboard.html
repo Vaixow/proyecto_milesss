@@ -103,8 +103,8 @@
                                 {% for calificacion in listado_calificaciones %}
                                 <tr>
                                     <td>C-{{ calificacion.id|stringformat:"04d" }}</td>
-                                    <td>{{ calificacion.monto|floatformat:3 }} CLP</td>
-                                    <td>{{ calificacion.factor|floatformat:2 }}</td> <td>
+                                    <td>{{ calificacion.monto|floatformat:0 }} CLP</td>
+                                    <td>{{ calificacion.factor|floatformat:0 }}</td> <td>
                                         <span class="badge bg-{% if calificacion.estado == 'validado' %}success{% elif calificacion.estado == 'rechazado' %}danger{% else %}warning{% endif %}">
                                             {{ calificacion.get_estado_display }}
                                         </span>
