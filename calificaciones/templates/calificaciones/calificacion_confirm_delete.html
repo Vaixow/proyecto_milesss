@@ -12,8 +12,8 @@
             <div class="col-md-6">
                 <div class="alert alert-danger" role="alert">
                     <h4 class="alert-heading">⚠️ Confirmar Eliminación</h4>
-                    <p>¿Estás seguro de eliminar la calificación <strong>C-{{ calificacion.id|stringformat:"04d" }}</strong>?</p>
-                    <p>Monto: {{ calificacion.monto|floatformat:2 }} CLP</p>
+                    <p>¿Estás seguro de eliminar la calificación <strong>{{ calificacion.id }}</strong>?</p>
+                    <p>Monto: {{ calificacion.monto }} CLP</p>
                     <hr>
                     <form method="post">
                         {% csrf_token %}

@@ -35,3 +35,11 @@ class CalificacionForm(forms.ModelForm):
             'tipo_movimiento': 'Seleccione si es un CARGO o un ABONO.',
             'estado': 'Seleccione el estado de la calificación.',
         }
+
+
+class ArchivoMasivoForm(forms.Form):
+    archivo_carga = forms.FileField(
+        label='Archivo de Calificaciones (.csv o .xlsx)',
+        help_text='Sube tu archivo con el listado de calificaciones.',
+        widget=forms.FileInput(attrs={'class': 'form-control'})
+    )   

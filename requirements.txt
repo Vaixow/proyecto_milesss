@@ -4,3 +4,4 @@ whitenoise
 psycopg2[binary,pool]
 django-widget-tweaks
 python-dotenv
+openpyxl
