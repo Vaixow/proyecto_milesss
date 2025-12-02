@@ -1,0 +1,10 @@
+monto,tipo_movimiento,estado
+1,reembolso,pendiente
+2,cargo,validado
+3,pago,rechazado
+4,abono,validado
+
+
+
+
+###############3PLANTILLA DE EJEMPLO, DEBEN CAMBIARSE LOS VALORES YA INSERTADOS#################
