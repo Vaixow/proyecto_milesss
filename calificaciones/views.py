@@ -27,6 +27,49 @@ from .models import Calificacion, ArchivoMasivo, Auditoria
 from .forms import CalificacionForm, ArchivoMasivoForm 
 
 
+#SERIALIZERS
+from django.contrib.auth.models import Group, User
+from rest_framework import permissions, viewsets
+from .serializers import GroupSerializer, UserSerializer, CalificacionSerializer, AuditoriaSerializer, ArchivoMasivoSerializer
+
+
+class CalificacionViewSet(viewsets.ModelViewSet):
+    queryset = Calificacion.objects.all().order_by("id")
+    serializer_class = CalificacionSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+
+class ArchivoMasivoViewSet(viewsets.ModelViewSet):
+    queryset = ArchivoMasivo.objects.all().order_by("-fecha_carga")
+    serializer_class = ArchivoMasivoSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+
+class AuditoriaViewSet(viewsets.ModelViewSet):
+    queryset = Auditoria.objects.all().order_by("-fecha")
+    serializer_class = AuditoriaSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+
+class UserViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint that allows users to be viewed or edited.
+    """
+
+    queryset = User.objects.all().order_by("-date_joined")
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+
+class GroupViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint that allows groups to be viewed or edited.
+    """
+
+    queryset = Group.objects.all().order_by("name")
+    serializer_class = GroupSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
 # --- LISTAR (R de CRUD) / DASHBOARD ---
 @login_required
 def dashboard_view(request):

@@ -5,3 +5,6 @@ psycopg2[binary,pool]
 django-widget-tweaks
 python-dotenv
 openpyxl
+djangorestframework
+djangorestframework-simplejwt
+django-cors-headers
