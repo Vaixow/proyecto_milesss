@@ -265,41 +265,44 @@
     // ✅ Mostrar selector solo en privado
     chatMode.onchange = () => {
         chatUser.style.display = chatMode.value === "private" ? "block" : "none";
+        chatLog.innerHTML = ""; // ✅ LIMPIA CHAT AL CAMBIAR DE MODO
     };
 
-    // ✅ WebSocket correcto
+    // ✅ WebSocket seguro
     const protocolo = window.location.protocol === "https:" ? "wss" : "ws";
-
     const chatSocket = new WebSocket(
         protocolo + "://" + window.location.host + "/ws/chat/"
     );
 
-
-    // ✅ Recibir mensajes
+    // ✅ RECIBIR MENSAJES (CORRECTAMENTE FILTRADOS)
     chatSocket.onmessage = function(e) {
         const data = JSON.parse(e.data);
 
-        // ✅ FILTRO CORRECTO:
-        if (data.mode === "global" && chatMode.value !== "global") return;
+        // ✅ NO MEZCLAR GLOBAL CON PRIVADO
+        if (data.mode === "global") {
+            if (chatMode.value !== "global") return;
+        }
 
         if (data.mode === "private") {
             if (chatMode.value !== "private") return;
 
             const yo = "{{ usuario.username }}";
 
-            // ✅ Solo mostrar si eres emisor o receptor
-            if (data.user !== chatUser.value && data.target !== yo) return;
+            // ✅ Mostrar SOLO si:
+            // - Yo soy el emisor
+            // - Yo soy el receptor
+            if (data.user !== yo && data.target !== yo) return;
         }
 
-
         const mensaje = document.createElement("div");
-        mensaje.innerHTML = `<strong>${data.user}:</strong> ${data.message}`;
+        const tipo = data.mode === "private" ? "🔒" : "🌍";
+
+        mensaje.innerHTML = `<strong>${tipo} ${data.user}:</strong> ${data.message}`;
         chatLog.appendChild(mensaje);
         chatLog.scrollTop = chatLog.scrollHeight;
     };
 
-
-    // ✅ ENVIAR MENSAJES (GLOBAL Y PRIVADO BIEN DIFERENCIADOS)
+    // ✅ ENVIAR MENSAJES
     chatSubmit.onclick = function() {
         const message = chatInput.value.trim();
         const mode = chatMode.value;
@@ -307,16 +310,14 @@
 
         if (!message) return;
 
-        // ❌ Error clásico: mandar privado sin usuario
         if (mode === "private" && !target) {
             alert("Selecciona un usuario para el chat privado.");
             return;
         }
 
-        // ✅ Envío correctamente separado
         const payload = {
             message: message,
-            mode: mode,
+            mode: mode
         };
 
         if (mode === "private") {
@@ -324,10 +325,6 @@
         }
 
         chatSocket.send(JSON.stringify(payload));
-
         chatInput.value = "";
     };
     </script>
-
-</body>
-</html>
