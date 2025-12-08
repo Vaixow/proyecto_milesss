@@ -216,11 +216,14 @@ THOUSAND_SEPARATOR = '.'
 
 
 
-ASGI_APPLICATION = 'miles_project.asgi.application'
+ASGI_APPLICATION = "miles_project.asgi.application"
 
 CHANNEL_LAYERS = {
     "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer",
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [os.getenv("REDIS_URL")],
+        },
     },
 }
 
