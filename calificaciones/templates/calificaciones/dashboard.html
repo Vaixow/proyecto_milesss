@@ -256,17 +256,48 @@
     const chatSubmit = document.getElementById("chat-message-submit");
 
     // ✅ Mostrar / ocultar chat
-    chatBtn.onclick = () => chatBox.style.display = "block";
+    chatBtn.onclick = () => {
+        chatBox.style.display = "block";
+        cargarMensajes();
+    };
+
     closeChat.onclick = () => chatBox.style.display = "none";
     minimizeChat.onclick = () => {
         chatLog.style.display = chatLog.style.display === "none" ? "block" : "none";
     };
 
     // ✅ Mostrar selector solo en privado
-    chatMode.onchange = () => {
-        chatUser.style.display = chatMode.value === "private" ? "block" : "none";
-        chatLog.innerHTML = ""; // ✅ LIMPIA CHAT AL CAMBIAR DE MODO
-    };
+    chatMode.onchange = cargarMensajes;
+    chatUser.onchange = cargarMensajes;
+
+    function cargarMensajes() {
+        const mode = chatMode.value;
+        const target = chatUser.value;
+
+        chatUser.style.display = mode === "private" ? "block" : "none";
+        chatLog.innerHTML = "";
+
+        let url = `/chat/mensajes/?mode=${mode}`;
+
+        if (mode === "private") {
+            url += `&target=${target}`;
+        }
+
+        fetch(url)
+            .then(res => res.json())
+            .then(data => {
+                data.forEach(msg => {
+                    const div = document.createElement("div");
+                    const tipo = msg.mode === "private" ? "🔒" : "🌍";
+                    div.innerHTML = `<strong>${tipo} ${msg.user}:</strong> ${msg.message}`;
+                    chatLog.appendChild(div);
+                });
+
+                chatLog.scrollTop = chatLog.scrollHeight;
+            });
+    }
+
+
 
     // ✅ WebSocket seguro
     const protocolo = window.location.protocol === "https:" ? "wss" : "ws";

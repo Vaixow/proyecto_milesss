@@ -35,5 +35,7 @@ urlpatterns = [
     path('exportar/csv/', views.exportar_calificaciones_csv, name='exportar_calificaciones_csv'),
     path('exportar/excel/', views.exportar_calificaciones_excel, name='exportar_calificaciones_excel'),
     path('exportar/pdf/', views.exportar_calificaciones_pdf, name='exportar_calificaciones_pdf'),
+    path("chat/mensajes/", views.cargar_mensajes, name="cargar_mensajes"),
+
 
 ]

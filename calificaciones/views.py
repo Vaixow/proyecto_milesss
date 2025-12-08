@@ -453,3 +453,34 @@ def exportar_calificaciones_pdf(request):
 
 from django.contrib.auth.models import User
 
+from django.http import JsonResponse
+
+@login_required
+def cargar_mensajes(request):
+    mode = request.GET.get("mode")
+    target = request.GET.get("target")
+
+    if mode == "global":
+        mensajes = ChatMessage.objects.filter(mode="global").order_by("timestamp")
+
+    elif mode == "private" and target:
+        mensajes = ChatMessage.objects.filter(
+            mode="private"
+        ).filter(
+            Q(user=request.user, target__username=target) |
+            Q(user__username=target, target=request.user)
+        ).order_by("timestamp")
+
+    else:
+        mensajes = []
+
+    data = [
+        {
+            "user": m.user.username,
+            "message": m.message,
+            "mode": m.mode,
+        }
+        for m in mensajes
+    ]
+
+    return JsonResponse(data, safe=False)
