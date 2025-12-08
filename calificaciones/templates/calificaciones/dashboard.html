@@ -284,8 +284,13 @@
 
         if (data.mode === "private") {
             if (chatMode.value !== "private") return;
-            if (data.user !== chatUser.value && data.target !== chatUser.value) return;
+
+            const yo = "{{ usuario.username }}";
+
+            // ✅ Solo mostrar si eres emisor o receptor
+            if (data.user !== chatUser.value && data.target !== yo) return;
         }
+
 
         const mensaje = document.createElement("div");
         mensaje.innerHTML = `<strong>${data.user}:</strong> ${data.message}`;
