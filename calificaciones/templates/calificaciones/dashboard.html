@@ -6,9 +6,6 @@
     <title>Gestión de Calificaciones</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-
-        
-        /* Estilos CSS personalizados para las tarjetas */
         .card-header-custom {
             background-color: #f8f9fa;
             border-bottom: 1px solid #dee2e6;
@@ -20,6 +17,15 @@
             padding: 0.5rem 1rem;
         }
         .bg-purple { background-color: #6f42c1 !important; }
+
+        /* ✅ CHAT FLOTANTE */
+        #chat-toggle {
+            z-index: 9999;
+        }
+
+        #chat-box {
+            z-index: 9999;
+        }
     </style>
 </head>
 <body>
@@ -88,7 +94,6 @@
 
                 <div class="card shadow-sm">
 
-                    <!-- ================= CARD HEADER CON BUSCADOR ================= -->
                     <div class="card-header bg-light d-flex justify-content-between align-items-center">
 
                         <div>
@@ -96,21 +101,39 @@
                             <p class="text-muted small mb-0">Total: {{ total_calificaciones }}</p>
                         </div>
 
-                        <form method="get" class="d-flex" style="max-width: 260px;">
-                            <input 
-                                type="text" 
-                                name="q"
-                                value="{{ request.GET.q }}"
-                                class="form-control form-control-sm"
-                                placeholder="Buscar por ID o usuario"
-                            >
-                            <button class="btn btn-sm btn-outline-secondary ms-2" type="submit">
-                                🔍
-                            </button>
-                        </form>
+                        <div class="d-flex align-items-center gap-2">
+
+                            <a href="{% url 'exportar_calificaciones_csv' %}" class="btn btn-sm btn-outline-success">⬇ CSV</a>
+                            <a href="{% url 'exportar_calificaciones_excel' %}" class="btn btn-sm btn-outline-primary">⬇ XLSX</a>
+                            <a href="{% url 'exportar_calificaciones_pdf' %}" class="btn btn-sm btn-outline-danger">⬇ PDF</a>
+
+                            <form method="get" class="d-flex align-items-center ms-2">
+                                <span class="me-2 small fw-semibold text-secondary">Ordenar por:</span>
+                                <select name="orden" class="form-select form-select-sm me-2" onchange="this.form.submit()">
+                                    <option value="id">ID ↑</option>
+                                    <option value="-id">ID ↓</option>
+                                    <option value="monto">Monto ↑</option>
+                                    <option value="-monto">Monto ↓</option>
+                                    <option value="fecha_registro">Fecha ↑</option>
+                                    <option value="-fecha_registro">Fecha ↓</option>
+                                    <option value="estado">Estado</option>
+                                </select>
+                            </form>
+
+                            <form method="get" class="d-flex" style="max-width: 260px;">
+                                <input 
+                                    type="text" 
+                                    name="q"
+                                    value="{{ request.GET.q }}"
+                                    class="form-control form-control-sm"
+                                    placeholder="Buscar por ID o usuario"
+                                >
+                                <button class="btn btn-sm btn-outline-secondary ms-2" type="submit">🔍</button>
+                            </form>
+
+                        </div>
 
                     </div>
-                    <!-- ============================================================ -->
 
                     <div class="card-body">
                         <table class="table table-striped table-hover small">
@@ -118,7 +141,7 @@
                                 <tr>
                                     <th>ID</th>
                                     <th>Monto</th>
-                                    <th>Tipo de Movimiento</th>
+                                    <th>Tipo</th>
                                     <th>Estado</th>
                                     <th>Fecha</th>
                                     <th>Usuario</th>
@@ -131,51 +154,19 @@
                                 <tr>
                                     <td>{{ calificacion.id}}</td>
                                     <td>{{ calificacion.monto|floatformat:0 }} CLP</td>
-
-                                    <td>
-                                        <span class="badge
-                                            {% if calificacion.tipo_movimiento == 'abono' %} bg-success
-                                            {% elif calificacion.tipo_movimiento == 'cargo' %} bg-danger
-                                            {% elif calificacion.tipo_movimiento == 'pago' %} bg-warning text-dark
-                                            {% elif calificacion.tipo_movimiento == 'reembolso' %} bg-purple text-white
-                                            {% endif %}
-                                        ">
-                                            {{ calificacion.get_tipo_movimiento_display }}
-                                        </span>
-                                    </td>
-
-                                        <td>
-                                            <span class="badge 
-                                                {% if calificacion.estado == 'validado' %} bg-success
-                                                {% elif calificacion.estado == 'rechazado' %} bg-danger
-                                                {% else %} bg-warning text-dark
-                                                {% endif %}
-                                            ">
-                                                {{ calificacion.get_estado_display }}
-                                            </span>
-                                        </td>
-
-
+                                    <td>{{ calificacion.get_tipo_movimiento_display }}</td>
+                                    <td>{{ calificacion.get_estado_display }}</td>
                                     <td>{{ calificacion.fecha_registro|date:"d-m-Y" }}</td>
                                     <td>{{ calificacion.usuario.username }}</td>
-
                                     <td>
                                         <a href="{% url 'ver_calificacion' calificacion.id %}" class="btn btn-sm btn-info">Ver</a>
                                         <a href="{% url 'editar_calificacion' calificacion.id %}" class="btn btn-sm btn-warning">Editar</a>
                                         <a href="{% url 'eliminar_calificacion' calificacion.id %}" class="btn btn-sm btn-danger">Eliminar</a>
                                     </td>
                                 </tr>
-                                {% empty %}
-                                <tr>
-                                    <td colspan="7">No hay calificaciones registradas.</td>
-                                </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
-
-                        <p class="small text-end mt-3">
-                            Mostrando {{ listado_calificaciones|length }} de {{ total_calificaciones }}
-                        </p>
                     </div>
 
                 </div>
@@ -184,29 +175,26 @@
 
             <div class="col-md-3">
 
-                <!-- Nueva Calificación -->
                 <div class="card mb-3 shadow-sm">
                     <div class="card-body">
                         <h6 class="card-title">Nueva calificación</h6>
-                        <p class="text-muted small">Agregar manualmente</p>
+                        <p>Crea calificaciones</p>
                         <a href="{% url 'crear_calificacion' %}" class="btn btn-sm btn-primary w-100">Crear</a>
                     </div>
                 </div>
 
-                <!-- Carga masiva -->
                 <div class="card mb-3 shadow-sm">
                     <div class="card-body">
                         <h6 class="card-title">Carga masiva</h6>
-                        <p class="text-muted small">CSV / XLSX</p>
+                        <p>Carga tus XLSX/CSV</p>
                         <a href="{% url 'carga_masiva' %}" class="btn btn-sm btn-success w-100">Cargar</a>
                     </div>
                 </div>
 
-                <!-- Auditoría -->
                 <div class="card mb-3 shadow-sm">
                     <div class="card-body">
                         <h6 class="card-title">Auditoría</h6>
-                        <p class="text-muted small">Historial de cambios</p>
+                        <p>(Sitio apto solo para usuarios con permisos)</p>
                         <a href="{% url 'admin:calificaciones_auditoria_changelist' %}" class="btn btn-sm btn-secondary w-100">Ver Logs</a>
                     </div>
                 </div>
@@ -217,6 +205,119 @@
 
     </div>
 
+    <!-- ✅ BOTÓN FLOTANTE -->
+    <button id="chat-toggle" class="btn btn-primary position-fixed bottom-0 end-0 m-4 rounded-circle shadow">
+        💬
+    </button>
+
+    <!-- ✅ VENTANA DEL CHAT -->
+    <div id="chat-box" class="card shadow position-fixed bottom-0 end-0 m-4" style="width:350px; display:none;">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <span>💬 Chat NUAM</span>
+            <div>
+                <button id="minimize-chat" class="btn btn-sm btn-light">—</button>
+                <button id="close-chat" class="btn btn-sm btn-danger">X</button>
+            </div>
+        </div>
+
+        <div class="card-body p-2">
+
+            <select id="chat-mode" class="form-select form-select-sm mb-2">
+                <option value="global">🌍 Chat Global</option>
+                <option value="private">👤 Chat Privado</option>
+            </select>
+
+            <select id="chat-user" class="form-select form-select-sm mb-2" style="display:none;">
+                {% for user in users %}
+                    <option value="{{ user.username }}">{{ user.username }}</option>
+                {% endfor %}
+            </select>
+
+            <div id="chat-log" style="height:200px; overflow-y:auto;" class="border rounded p-2 mb-2 bg-light small"></div>
+
+            <div class="d-flex">
+                <input id="chat-message-input" type="text" class="form-control form-control-sm me-2">
+                <button id="chat-message-submit" class="btn btn-primary btn-sm">Enviar</button>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+    const chatBtn = document.getElementById("chat-toggle");
+    const chatBox = document.getElementById("chat-box");
+    const closeChat = document.getElementById("close-chat");
+    const minimizeChat = document.getElementById("minimize-chat");
+    const chatLog = document.getElementById("chat-log");
+    const chatMode = document.getElementById("chat-mode");
+    const chatUser = document.getElementById("chat-user");
+    const chatInput = document.getElementById("chat-message-input");
+    const chatSubmit = document.getElementById("chat-message-submit");
+
+    // ✅ Mostrar / ocultar chat
+    chatBtn.onclick = () => chatBox.style.display = "block";
+    closeChat.onclick = () => chatBox.style.display = "none";
+    minimizeChat.onclick = () => {
+        chatLog.style.display = chatLog.style.display === "none" ? "block" : "none";
+    };
+
+    // ✅ Mostrar selector solo en privado
+    chatMode.onchange = () => {
+        chatUser.style.display = chatMode.value === "private" ? "block" : "none";
+    };
+
+    // ✅ WebSocket correcto
+    const chatSocket = new WebSocket("ws://" + window.location.host + "/ws/chat/");
+
+    // ✅ Recibir mensajes
+    chatSocket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+
+        // ✅ FILTRO CORRECTO:
+        if (data.mode === "global" && chatMode.value !== "global") return;
+
+        if (data.mode === "private") {
+            if (chatMode.value !== "private") return;
+            if (data.user !== chatUser.value && data.target !== chatUser.value) return;
+        }
+
+        const mensaje = document.createElement("div");
+        mensaje.innerHTML = `<strong>${data.user}:</strong> ${data.message}`;
+        chatLog.appendChild(mensaje);
+        chatLog.scrollTop = chatLog.scrollHeight;
+    };
+
+
+    // ✅ ENVIAR MENSAJES (GLOBAL Y PRIVADO BIEN DIFERENCIADOS)
+    chatSubmit.onclick = function() {
+        const message = chatInput.value.trim();
+        const mode = chatMode.value;
+        const target = chatUser.value;
+
+        if (!message) return;
+
+        // ❌ Error clásico: mandar privado sin usuario
+        if (mode === "private" && !target) {
+            alert("Selecciona un usuario para el chat privado.");
+            return;
+        }
+
+        // ✅ Envío correctamente separado
+        const payload = {
+            message: message,
+            mode: mode,
+        };
+
+        if (mode === "private") {
+            payload.target = target;
+        }
+
+        chatSocket.send(JSON.stringify(payload));
+
+        chatInput.value = "";
+    };
+    </script>
+
 </body>
 </html>

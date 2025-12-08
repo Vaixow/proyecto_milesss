@@ -8,3 +8,9 @@ openpyxl
 djangorestframework
 djangorestframework-simplejwt
 django-cors-headers
+reportlab
+openpyxl
+channels
+channels_redis
+daphne
+uvicorn

@@ -32,4 +32,8 @@ urlpatterns = [
     path('<int:pk>/', views.ver_calificacion, name='ver_calificacion'),        # URL: /12/
     path('<int:pk>/editar/', views.editar_calificacion, name='editar_calificacion'),  # URL: /12/editar/
     path('<int:pk>/eliminar/', views.eliminar_calificacion, name='eliminar_calificacion'),# URL: /12/eliminar/
+    path('exportar/csv/', views.exportar_calificaciones_csv, name='exportar_calificaciones_csv'),
+    path('exportar/excel/', views.exportar_calificaciones_excel, name='exportar_calificaciones_excel'),
+    path('exportar/pdf/', views.exportar_calificaciones_pdf, name='exportar_calificaciones_pdf'),
+
 ]

@@ -1,4 +1,11 @@
 # calificaciones/views.py
+import csv
+from django.http import HttpResponse
+from django.contrib.auth.decorators import login_required
+from .models import Calificacion
+
+from django.contrib.auth.models import User
+
 
 import csv
 from django.shortcuts import render, redirect, get_object_or_404
@@ -76,6 +83,61 @@ def dashboard_view(request):
     query = request.GET.get('q')
 
     calificaciones_qs = Calificacion.objects.all()
+
+    if query:
+        filters = Q(usuario__username__icontains=query)
+
+        try:
+            calificacion_id = int(query)
+            filters |= Q(id=calificacion_id)
+        except ValueError:
+            pass
+
+        calificaciones_qs = calificaciones_qs.filter(filters)
+
+    # ✅ ORDENAMIENTO
+    orden = request.GET.get('orden', 'id')
+
+    ordenes_validos = [
+        'id', '-id',
+        'monto', '-monto',
+        'fecha_registro', '-fecha_registro',
+        'estado'
+    ]
+
+    if orden not in ordenes_validos:
+        orden = 'id'
+
+    listado_calificaciones = calificaciones_qs.order_by(orden)
+    total_calificaciones = calificaciones_qs.count()
+
+    # ✅ CONTADORES DEL DASHBOARD
+    pendientes_validacion = Calificacion.objects.filter(estado='pendiente').count()
+
+    cargas_recientes = ArchivoMasivo.objects.filter(
+        fecha_carga__gte=timezone.now() - datetime.timedelta(hours=24)
+    ).count()
+
+    errores_simulados = 0  # Simulado
+
+    # ✅ USUARIOS PARA EL CHAT (EXCLUYE AL ACTUAL)
+    users = User.objects.exclude(username=request.user.username)
+
+    context = {
+        'listado_calificaciones': listado_calificaciones,
+        'total_calificaciones': total_calificaciones,
+        'usuario': request.user,
+        'pendientes_validacion': pendientes_validacion,
+        'cargas_recientes': cargas_recientes,
+        'errores_simulados': errores_simulados,
+        'users': users,  # ✅ IMPORTANTE PARA EL CHAT
+    }
+
+    return render(request, 'calificaciones/dashboard.html', context)
+
+    query = request.GET.get('q')
+
+    calificaciones_qs = Calificacion.objects.all()
     
     if query:
         filters = Q(usuario__username__icontains=query)
@@ -88,22 +150,19 @@ def dashboard_view(request):
 
         calificaciones_qs = calificaciones_qs.filter(filters)
 
-    listado_calificaciones = calificaciones_qs.order_by('id')
+    orden = request.GET.get('orden', 'id')  # por defecto ordena por ID
+
+    # Seguridad: solo permitir estos campos
+    ordenes_validos = ['id', 'monto', 'fecha_registro', 'estado', '-id', '-monto', '-fecha_registro']
+
+    if orden not in ordenes_validos:
+        orden = 'id'
+
+    listado_calificaciones = calificaciones_qs.order_by(orden)
+
     total_calificaciones = calificaciones_qs.count()
 
-    context = {
-        'listado_calificaciones': listado_calificaciones,
-        'total_calificaciones': total_calificaciones,
-        'usuario': request.user,
-        'pendientes_validacion': Calificacion.objects.filter(estado='pendiente').count(),
-        'cargas_recientes': ArchivoMasivo.objects.filter(
-            fecha_carga__gte=timezone.now() - datetime.timedelta(hours=24)
-        ).count(),
-        'errores_simulados': 0,
-    }
-    return render(request, 'calificaciones/dashboard.html', context)
-
-
+    
 # --- CREAR (C de CRUD) ---
 @login_required
 def crear_calificacion(request):
@@ -294,3 +353,98 @@ def carga_masiva_view(request):
         'form': form,
         'titulo': 'Carga Masiva'
     })
+
+
+
+
+from django.http import HttpResponse
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
+import openpyxl
+import csv
+
+# ==========================
+# ✅ EXPORTAR CSV
+# ==========================
+@login_required
+def exportar_calificaciones_csv(request):
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="calificaciones.csv"'
+
+    writer = csv.writer(response)
+    writer.writerow(['ID', 'Monto', 'Tipo', 'Estado', 'Fecha', 'Usuario'])
+
+    for cal in Calificacion.objects.all().order_by('id'):
+        writer.writerow([
+            cal.id,
+            cal.monto,
+            cal.get_tipo_movimiento_display(),
+            cal.get_estado_display(),
+            cal.fecha_registro,
+            cal.usuario.username
+        ])
+
+    return response
+
+
+# ==========================
+# ✅ EXPORTAR EXCEL
+# ==========================
+@login_required
+def exportar_calificaciones_excel(request):
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Calificaciones"
+
+    ws.append(['ID', 'Monto', 'Tipo', 'Estado', 'Fecha', 'Usuario'])
+
+    for cal in Calificacion.objects.all().order_by('id'):
+        ws.append([
+            cal.id,
+            cal.monto,
+            cal.get_tipo_movimiento_display(),
+            cal.get_estado_display(),
+            cal.fecha_registro.strftime("%d-%m-%Y"),
+            cal.usuario.username
+        ])
+
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = 'attachment; filename="calificaciones.xlsx"'
+    wb.save(response)
+
+    return response
+
+
+# ==========================
+# ✅ EXPORTAR PDF
+# ==========================
+@login_required
+def exportar_calificaciones_pdf(request):
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="calificaciones.pdf"'
+
+    p = canvas.Canvas(response, pagesize=A4)
+    width, height = A4
+
+    y = height - 50
+    p.setFont("Helvetica", 9)
+    p.drawString(50, y, "REPORTE DE CALIFICACIONES")
+    y -= 30
+
+    for cal in Calificacion.objects.all().order_by('id'):
+        linea = f"{cal.id} | {cal.monto} | {cal.get_tipo_movimiento_display()} | {cal.get_estado_display()} | {cal.fecha_registro} | {cal.usuario.username}"
+        p.drawString(50, y, linea)
+        y -= 15
+
+        if y < 60:
+            p.showPage()
+            y = height - 50
+            p.setFont("Helvetica", 9)
+
+    p.save()
+    return response
+
+from django.contrib.auth.models import User
+
