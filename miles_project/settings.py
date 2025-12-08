@@ -218,16 +218,20 @@ THOUSAND_SEPARATOR = '.'
 
 ASGI_APPLICATION = "miles_project.asgi.application"
 
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [os.getenv("REDIS_URL")],
-        },
-    },
-}
+
 
 
 CSRF_TRUSTED_ORIGINS = [
     "https://proyecto-milesss.onrender.com",
 ]
+
+REDIS_URL = os.getenv("REDIS_URL")
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [REDIS_URL],
+        },
+    },
+}
