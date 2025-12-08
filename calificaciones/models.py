@@ -116,3 +116,24 @@ class Auditoria(models.Model):
 
     def __str__(self):
         return f"{self.accion} por {self.usuario.username if self.usuario else 'N/A'} - {self.fecha.strftime('%Y-%m-%d %H:%M')}"
+
+
+from django.db import models
+from django.contrib.auth.models import User
+
+class ChatMessage(models.Model):
+    MODE_CHOICES = (
+        ("global", "Global"),
+        ("private", "Privado"),
+    )
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sent_messages")
+    target = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name="received_messages")
+    message = models.TextField()
+    mode = models.CharField(max_length=10, choices=MODE_CHOICES)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        if self.mode == "private":
+            return f"[PRIVADO] {self.user} → {self.target}: {self.message}"
+        return f"[GLOBAL] {self.user}: {self.message}"

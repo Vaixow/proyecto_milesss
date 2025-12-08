@@ -6,6 +6,9 @@ from .models import Calificacion
 
 from django.contrib.auth.models import User
 
+from .models import ChatMessage
+
+
 
 import csv
 from django.shortcuts import render, redirect, get_object_or_404
@@ -131,6 +134,8 @@ def dashboard_view(request):
         'cargas_recientes': cargas_recientes,
         'errores_simulados': errores_simulados,
         'users': users,  # ✅ IMPORTANTE PARA EL CHAT
+        'historial_global': ChatMessage.objects.filter(mode="global").order_by("timestamp"),
+
     }
 
     return render(request, 'calificaciones/dashboard.html', context)

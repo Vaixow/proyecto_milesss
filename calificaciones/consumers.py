@@ -1,5 +1,8 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
+from django.contrib.auth.models import User
+from asgiref.sync import sync_to_async
+from .models import ChatMessage
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
@@ -21,32 +24,47 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def receive(self, text_data):
         data = json.loads(text_data)
 
-        message = data.get("message", "")
+        message = data.get("message", "").strip()
         mode = data.get("mode", "global")
-        target = data.get("target")
+        target_username = data.get("target")
 
-        if not message.strip():
+        if not message:
             return
 
-        # ✅ ✅ ✅ PRIVADO (SE ENVÍA A AMBOS: EMISOR + RECEPTOR)
-        if mode == "private" and target:
+        # ✅ MENSAJE PRIVADO
+        if mode == "private" and target_username:
+            target_user = await sync_to_async(User.objects.get)(username=target_username)
+
+            # ✅ GUARDAR EN BD
+            await sync_to_async(ChatMessage.objects.create)(
+                user=self.user,
+                target=target_user,
+                message=message,
+                mode="private"
+            )
 
             payload = {
                 "type": "chat_message",
                 "message": message,
                 "user": self.user.username,
                 "mode": "private",
-                "target": target,
+                "target": target_username,
             }
 
-            # 👉 Receptor
-            await self.channel_layer.group_send(f"user_{target}", payload)
-
-            # 👉 Emisor (para que se vea a sí mismo)
+            # ✅ EMISOR
             await self.channel_layer.group_send(f"user_{self.user.username}", payload)
 
-        # ✅ ✅ ✅ GLOBAL
+            # ✅ RECEPTOR
+            await self.channel_layer.group_send(f"user_{target_username}", payload)
+
+        # ✅ MENSAJE GLOBAL
         else:
+            await sync_to_async(ChatMessage.objects.create)(
+                user=self.user,
+                message=message,
+                mode="global"
+            )
+
             await self.channel_layer.group_send(
                 self.global_group,
                 {
