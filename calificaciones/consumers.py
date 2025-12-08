@@ -9,6 +9,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     async def connect(self):
         self.user = self.scope["user"]
+
+        if not self.user.is_authenticated:
+            await self.close()
+            return
+
         self.global_group = "chat_global"
         self.private_group = f"user_{self.user.username}"
 
@@ -24,56 +29,49 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def receive(self, text_data):
         data = json.loads(text_data)
 
-        message = data.get("message", "").strip()
+        message = data.get("message")
         mode = data.get("mode", "global")
-        target_username = data.get("target")
+        target = data.get("target")
 
         if not message:
             return
 
-        # ✅ MENSAJE PRIVADO
-        if mode == "private" and target_username:
-            target_user = await sync_to_async(User.objects.get)(username=target_username)
+        # ✅ GUARDAR MENSAJE EN BD
+        await self.guardar_mensaje(message, mode, target)
 
-            # ✅ GUARDAR EN BD
-            await sync_to_async(ChatMessage.objects.create)(
+        # ✅ ENVIAR POR SOCKET
+        payload = {
+            "type": "chat_message",
+            "message": message,
+            "user": self.user.username,
+            "mode": mode,
+            "target": target,
+        }
+
+        if mode == "private" and target:
+            await self.channel_layer.group_send(f"user_{target}", payload)
+            await self.channel_layer.group_send(self.private_group, payload)  # ✅ eco para el emisor
+
+        else:
+            await self.channel_layer.group_send(self.global_group, payload)
+
+    async def chat_message(self, event):
+        await self.send(text_data=json.dumps(event))
+
+    # ✅ FUNCIÓN SEGURA PARA GUARDAR EN BD
+    @sync_to_async
+    def guardar_mensaje(self, message, mode, target):
+        if mode == "private" and target:
+            receptor = User.objects.get(username=target)
+            ChatMessage.objects.create(
                 user=self.user,
-                target=target_user,
+                target=receptor,
                 message=message,
                 mode="private"
             )
-
-            payload = {
-                "type": "chat_message",
-                "message": message,
-                "user": self.user.username,
-                "mode": "private",
-                "target": target_username,
-            }
-
-            # ✅ EMISOR
-            await self.channel_layer.group_send(f"user_{self.user.username}", payload)
-
-            # ✅ RECEPTOR
-            await self.channel_layer.group_send(f"user_{target_username}", payload)
-
-        # ✅ MENSAJE GLOBAL
         else:
-            await sync_to_async(ChatMessage.objects.create)(
+            ChatMessage.objects.create(
                 user=self.user,
                 message=message,
                 mode="global"
             )
-
-            await self.channel_layer.group_send(
-                self.global_group,
-                {
-                    "type": "chat_message",
-                    "message": message,
-                    "user": self.user.username,
-                    "mode": "global",
-                },
-            )
-
-    async def chat_message(self, event):
-        await self.send(text_data=json.dumps(event))
