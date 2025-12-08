@@ -28,17 +28,24 @@ class ChatConsumer(AsyncWebsocketConsumer):
         if not message.strip():
             return
 
+        # ✅ ✅ ✅ PRIVADO (SE ENVÍA A AMBOS: EMISOR + RECEPTOR)
         if mode == "private" and target:
-            await self.channel_layer.group_send(
-                f"user_{target}",
-                {
-                    "type": "chat_message",
-                    "message": message,
-                    "user": self.user.username,
-                    "mode": "private",
-                    "target": target,
-                },
-            )
+
+            payload = {
+                "type": "chat_message",
+                "message": message,
+                "user": self.user.username,
+                "mode": "private",
+                "target": target,
+            }
+
+            # 👉 Receptor
+            await self.channel_layer.group_send(f"user_{target}", payload)
+
+            # 👉 Emisor (para que se vea a sí mismo)
+            await self.channel_layer.group_send(f"user_{self.user.username}", payload)
+
+        # ✅ ✅ ✅ GLOBAL
         else:
             await self.channel_layer.group_send(
                 self.global_group,
