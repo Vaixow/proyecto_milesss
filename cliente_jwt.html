@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Cliente API NUAM — Versión PRO</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- ✅ Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gradient-to-br from-slate-900 to-slate-800 min-h-screen text-slate-100 flex items-center justify-center">
+
+  <div class="w-full max-w-6xl mx-auto px-4 py-6">
+    <!-- HEADER -->
+    <header class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div>
+        <h1 class="text-3xl md:text-4xl font-extrabold text-indigo-400 tracking-tight flex items-center gap-2">
+          📡 Cliente API NUAM
+        </h1>
+        <p class="text-sm text-slate-300 mt-1">
+          Consumo de API REST + JWT · CRUD completo de Calificaciones
+        </p>
+      </div>
+
+      <div id="login-panel" class="bg-slate-900/80 border border-slate-700 rounded-xl p-4 shadow-lg w-full md:w-72">
+        <h2 class="text-sm font-semibold mb-2 text-slate-200">🔐 Autenticación</h2>
+
+        <div class="space-y-2 mb-2">
+          <input id="username" class="w-full p-2 text-sm rounded-lg bg-slate-800 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Usuario">
+          <input id="password" type="password" class="w-full p-2 text-sm rounded-lg bg-slate-800 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Contraseña">
+        </div>
+
+        <button id="btn-login" onclick="login()" class="w-full bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] transition p-2 rounded-lg font-semibold text-sm shadow-md">
+          Iniciar Sesión
+        </button>
+
+        <p id="login-status" class="mt-2 text-xs text-slate-400 italic"></p>
+      </div>
+
+      <div id="user-info-panel" class="hidden bg-emerald-900/70 border border-emerald-500/50 rounded-xl p-4 shadow-lg w-full md:w-72">
+        <h2 class="text-sm font-semibold mb-1 text-emerald-100">✅ Sesión activa</h2>
+        <p class="text-xs text-emerald-200 mb-2">
+          Token JWT almacenado en <code>localStorage</code>.
+        </p>
+        <p class="text-sm">
+          Usuario actual: <span id="current-user" class="font-semibold text-emerald-300">—</span>
+        </p>
+        <button onclick="logout()" class="mt-3 w-full bg-red-600 hover:bg-red-700 active:scale-[0.98] transition p-2 rounded-lg font-semibold text-xs shadow-md">
+          Cerrar sesión
+        </button>
+      </div>
+    </header>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="bg-slate-900/80 border border-slate-700 rounded-2xl shadow-2xl p-5 space-y-4">
+
+      <!-- Barra superior: acciones + buscador -->
+      <section class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div class="flex flex-wrap gap-2">
+          <button onclick="cargarCalificaciones()" class="bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] transition px-4 py-2 rounded-lg text-sm font-semibold shadow-md flex items-center gap-1">
+            🔄 Cargar calificaciones
+          </button>
+
+          <button onclick="abrirModalCrear()" class="bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] transition px-4 py-2 rounded-lg text-sm font-semibold shadow-md flex items-center gap-1">
+            ➕ Nueva calificación
+          </button>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
+          <input id="buscador" oninput="filtrarTabla()" class="w-full sm:w-64 p-2 text-sm rounded-lg bg-slate-800 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Buscar por ID, usuario, tipo, estado, monto...">
+        </div>
+      </section>
+
+      <!-- Tabla -->
+      <section class="mt-3">
+        <div class="overflow-x-auto rounded-xl border border-slate-700">
+          <table class="min-w-full text-sm">
+            <thead class="bg-slate-800/80 text-slate-200 text-xs uppercase tracking-wide">
+              <tr>
+                <th class="px-3 py-2 text-left">ID</th>
+                <th class="px-3 py-2 text-left">Usuario</th>
+                <th class="px-3 py-2 text-right">Monto (CLP)</th>
+                <th class="px-3 py-2 text-left">Tipo</th>
+                <th class="px-3 py-2 text-left">Estado</th>
+                <th class="px-3 py-2 text-left">Fecha</th>
+                <th class="px-3 py-2 text-center">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-calificaciones" class="divide-y divide-slate-800/80 bg-slate-900/40">
+              <!-- Filas dinámicas -->
+            </tbody>
+          </table>
+        </div>
+
+        <p id="tabla-vacia" class="mt-3 text-xs text-slate-400 hidden">
+          No hay calificaciones para mostrar. Intenta recargar o crear una nueva.
+        </p>
+      </section>
+
+      <!-- Resultado RAW opcional -->
+      <section class="mt-4">
+        <details class="bg-black/60 border border-slate-700 rounded-xl p-3 text-xs text-green-400">
+          <summary class="cursor-pointer text-slate-200 mb-1">
+            📦 Ver respuesta cruda de la API (JSON)
+          </summary>
+          <pre id="resultado" class="mt-2 max-h-72 overflow-y-auto"></pre>
+        </details>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- MODAL CREAR/EDITAR -->
+  <div id="modal-overlay" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-lg p-5 transform transition-all scale-95 opacity-0" id="modal-card">
+      <div class="flex items-center justify-between mb-3">
+        <h2 id="modal-titulo" class="text-lg font-semibold text-indigo-300">Nueva calificación</h2>
+        <button onclick="cerrarModal()" class="text-slate-400 hover:text-slate-200 text-xl leading-none">&times;</button>
+      </div>
+
+      <form id="form-calificacion" class="space-y-3 text-sm" onsubmit="guardarCalificacion(event)">
+        <input type="hidden" id="calificacion-id">
+
+        <div>
+          <label class="block mb-1 text-slate-300 text-xs font-semibold">Usuario</label>
+          <select id="campo-usuario" class="w-full p-2 rounded-lg bg-slate-800 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+            <!-- Opciones dinámicas -->
+          </select>
+          <p class="text-xs text-slate-400 mt-1">
+            Lista obtenida desde <code>/api/users/</code>.
+          </p>
+        </div>
+
+        <div>
+          <label class="block mb-1 text-slate-300 text-xs font-semibold">Monto (CLP)</label>
+          <input id="campo-monto" type="number" step="1" min="0" class="w-full p-2 rounded-lg bg-slate-800 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block mb-1 text-slate-300 text-xs font-semibold">Tipo de movimiento</label>
+            <select id="campo-tipo" class="w-full p-2 rounded-lg bg-slate-800 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+              <option value="abono">ABONO</option>
+              <option value="cargo">CARGO</option>
+              <option value="pago">PAGO</option>
+              <option value="reembolso">REEMBOLSO</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block mb-1 text-slate-300 text-xs font-semibold">Estado</label>
+            <select id="campo-estado" class="w-full p-2 rounded-lg bg-slate-800 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+              <option value="pendiente">Pendiente</option>
+              <option value="validado">Validado</option>
+              <option value="rechazado">Rechazado</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block mb-1 text-slate-300 text-xs font-semibold">Fecha de registro</label>
+          <input id="campo-fecha" type="date" class="w-full p-2 rounded-lg bg-slate-800 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+        </div>
+
+        <div id="modal-error" class="text-xs text-red-400 hidden"></div>
+
+        <div class="pt-2 flex justify-end gap-2">
+          <button type="button" onclick="cerrarModal()" class="px-3 py-2 rounded-lg text-xs font-semibold bg-slate-700 hover:bg-slate-600">
+            Cancelar
+          </button>
+          <button type="submit" class="px-4 py-2 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] transition">
+            💾 Guardar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- CONFIRM DELETE -->
+  <div id="confirm-overlay" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+    <div class="bg-slate-900 border border-red-700/60 rounded-2xl shadow-2xl w-full max-w-sm p-5">
+      <h2 class="text-lg font-semibold text-red-300 mb-2">Eliminar calificación</h2>
+      <p class="text-sm text-slate-200 mb-4">
+        ¿Seguro que deseas eliminar la calificación <span id="confirm-id" class="font-bold"></span>? Esta acción no se puede deshacer.
+      </p>
+      <div class="flex justify-end gap-2 text-sm">
+        <button onclick="cerrarConfirm()" class="px-3 py-2 rounded-lg bg-slate-700 hover:bg-slate-600">
+          Cancelar
+        </button>
+        <button id="btn-confirm-delete" class="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 active:scale-[0.98] transition">
+          Eliminar
+        </button>
+      </div>
+    </div>
+  </div>
+
+<script>
+// 👉 Cambia esto si quieres probar en local:
+// const API_URL = "http://127.0.0.1:8000";
+const API_URL = "https://proyecto-milesss.onrender.com";
+
+let state = {
+  token: null,
+  currentUsername: null,
+  users: [],
+  calificaciones: [],
+  filtro: ""
+};
+
+// Utilidades
+function setTexto(id, texto) {
+  document.getElementById(id).textContent = texto;
+}
+
+function mostrarElemento(id) {
+  document.getElementById(id).classList.remove("hidden");
+}
+
+function ocultarElemento(id) {
+  document.getElementById(id).classList.add("hidden");
+}
+
+// LOGIN JWT
+async function login() {
+  const username = document.getElementById("username").value.trim();
+  const password = document.getElementById("password").value.trim();
+  const status = document.getElementById("login-status");
+  status.textContent = "Autenticando...";
+
+  try {
+    const res = await fetch(`${API_URL}/api/token/`, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({username, password})
+    });
+
+    const data = await res.json();
+
+    if (res.ok && data.access) {
+      state.token = data.access;
+      state.currentUsername = username;
+      localStorage.setItem("nuam_token", data.access);
+      localStorage.setItem("nuam_user", username);
+
+      status.textContent = "✅ Login correcto";
+      status.classList.remove("text-red-400");
+      status.classList.add("text-emerald-400");
+
+      // Mostrar panel de sesión
+      document.getElementById("login-panel").classList.add("hidden");
+      const infoPanel = document.getElementById("user-info-panel");
+      infoPanel.classList.remove("hidden");
+      setTexto("current-user", username);
+
+      await cargarUsuarios();
+      await cargarCalificaciones();
+    } else {
+      status.textContent = "❌ Credenciales inválidas";
+      status.classList.remove("text-emerald-400");
+      status.classList.add("text-red-400");
+    }
+  } catch (err) {
+    console.error(err);
+    status.textContent = "❌ Error de conexión con la API";
+    status.classList.remove("text-emerald-400");
+    status.classList.add("text-red-400");
+  }
+}
+
+function logout() {
+  state.token = null;
+  state.currentUsername = null;
+  localStorage.removeItem("nuam_token");
+  localStorage.removeItem("nuam_user");
+  document.getElementById("user-info-panel").classList.add("hidden");
+  document.getElementById("login-panel").classList.remove("hidden");
+  setTexto("login-status", "");
+  document.getElementById("resultado").textContent = "";
+  document.getElementById("tabla-calificaciones").innerHTML = "";
+}
+
+// Cargar token desde localStorage al entrar
+(async function initFromStorage() {
+  const savedToken = localStorage.getItem("nuam_token");
+  const savedUser = localStorage.getItem("nuam_user");
+  if (savedToken) {
+    state.token = savedToken;
+    state.currentUsername = savedUser || null;
+
+    document.getElementById("login-panel").classList.add("hidden");
+    const infoPanel = document.getElementById("user-info-panel");
+    infoPanel.classList.remove("hidden");
+    setTexto("current-user", state.currentUsername || "Usuario autenticado");
+
+    await cargarUsuarios();
+    await cargarCalificaciones();
+  }
+})();
+
+// Cargar usuarios para el select
+async function cargarUsuarios() {
+  if (!state.token) return;
+
+  try {
+    const res = await fetch(`${API_URL}/api/users/`, {
+      headers: {
+        "Authorization": "Bearer " + state.token
+      }
+    });
+
+    const data = await res.json();
+    // Manejar posible paginación
+    const results = Array.isArray(data) ? data : (data.results || []);
+    state.users = results;
+
+    // Rellenar select de usuario del formulario
+    const select = document.getElementById("campo-usuario");
+    select.innerHTML = "";
+    for (const u of results) {
+      const opt = document.createElement("option");
+      opt.value = u.id;
+      opt.textContent = `${u.id} — ${u.username}`;
+      select.appendChild(opt);
+    }
+  } catch (err) {
+    console.error("Error cargando usuarios:", err);
+  }
+}
+
+// Cargar calificaciones
+async function cargarCalificaciones() {
+  if (!state.token) {
+    alert("⚠ Debes iniciar sesión primero");
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_URL}/api/Calificacion/`, {
+      headers: {
+        "Authorization": "Bearer " + state.token
+      }
+    });
+
+    const data = await res.json();
+    document.getElementById("resultado").textContent = JSON.stringify(data, null, 2);
+
+    const results = Array.isArray(data) ? data : (data.results || []);
+    state.calificaciones = results;
+    renderTabla();
+  } catch (err) {
+    console.error("Error cargando calificaciones:", err);
+    alert("Error al cargar calificaciones (ver consola).");
+  }
+}
+
+// Render tabla con filtro
+function renderTabla() {
+  const tbody = document.getElementById("tabla-calificaciones");
+  tbody.innerHTML = "";
+
+  const filtro = (state.filtro || "").toLowerCase().trim();
+
+  const usuariosPorId = {};
+  for (const u of state.users) {
+    usuariosPorId[u.id] = u.username;
+  }
+
+  const filtradas = state.calificaciones.filter(c => {
+    if (!filtro) return true;
+
+    const usuarioId = extraerIdDeCampoUsuario(c.usuario);
+    const username = usuariosPorId[usuarioId] || "";
+    const campos = [
+      String(c.id || ""),
+      String(c.monto || ""),
+      String(c.tipo_movimiento || ""),
+      String(c.estado || ""),
+      String(c.fecha_registro || ""),
+      String(usuarioId || ""),
+      username
+    ].join(" ").toLowerCase();
+
+    return campos.includes(filtro);
+  });
+
+  if (filtradas.length === 0) {
+    mostrarElemento("tabla-vacia");
+  } else {
+    ocultarElemento("tabla-vacia");
+  }
+
+  for (const c of filtradas) {
+    const tr = document.createElement("tr");
+    tr.className = "hover:bg-slate-800/70 transition";
+
+    const usuarioId = extraerIdDeCampoUsuario(c.usuario);
+    const username = usuariosPorId[usuarioId] || `ID ${usuarioId}`;
+
+    // Badges
+    const tipoBadge = crearBadgeTipo(c.tipo_movimiento);
+    const estadoBadge = crearBadgeEstado(c.estado);
+
+    tr.innerHTML = `
+      <td class="px-3 py-2 align-middle text-xs">${c.id ?? ""}</td>
+      <td class="px-3 py-2 align-middle text-xs">
+        <span class="inline-flex items-center gap-1">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+          ${username}
+        </span>
+      </td>
+      <td class="px-3 py-2 align-middle text-xs text-right">${formatearMonto(c.monto)}</td>
+      <td class="px-3 py-2 align-middle text-xs">${tipoBadge}</td>
+      <td class="px-3 py-2 align-middle text-xs">${estadoBadge}</td>
+      <td class="px-3 py-2 align-middle text-xs">${c.fecha_registro ?? ""}</td>
+      <td class="px-3 py-2 align-middle text-xs text-center">
+        <div class="inline-flex gap-1">
+          <button onclick="abrirModalEditar(${c.id})" class="px-2 py-1 rounded bg-sky-600 hover:bg-sky-700 text-[11px] font-semibold">
+            Editar
+          </button>
+          <button onclick="abrirConfirm(${c.id})" class="px-2 py-1 rounded bg-red-600 hover:bg-red-700 text-[11px] font-semibold">
+            Eliminar
+          </button>
+        </div>
+      </td>
+    `;
+
+    tbody.appendChild(tr);
+  }
+}
+
+function extraerIdDeCampoUsuario(usuarioCampo) {
+  if (!usuarioCampo) return null;
+  // Puede ser número o URL tipo /api/users/1/
+  if (typeof usuarioCampo === "number") return usuarioCampo;
+  if (typeof usuarioCampo === "string") {
+    const partes = usuarioCampo.split("/").filter(Boolean);
+    const ultimo = partes[partes.length - 1];
+    const idNum = parseInt(ultimo, 10);
+    return isNaN(idNum) ? null : idNum;
+  }
+  return null;
+}
+
+function crearBadgeTipo(tipo) {
+  const map = {
+    abono: "bg-emerald-900/80 text-emerald-300 border-emerald-500/40",
+    cargo: "bg-amber-900/80 text-amber-300 border-amber-500/40",
+    pago: "bg-sky-900/80 text-sky-300 border-sky-500/40",
+    reembolso: "bg-fuchsia-900/80 text-fuchsia-300 border-fuchsia-500/40"
+  };
+  const textMap = {
+    abono: "ABONO",
+    cargo: "CARGO",
+    pago: "PAGO",
+    reembolso: "REEMBOLSO"
+  };
+  const clase = map[tipo] || "bg-slate-800 text-slate-200 border-slate-600/60";
+  const texto = textMap[tipo] || tipo;
+
+  return `<span class="inline-flex items-center px-2 py-0.5 rounded-full border text-[11px] ${clase}">${texto}</span>`;
+}
+
+function crearBadgeEstado(estado) {
+  const map = {
+    pendiente: "bg-slate-800 text-amber-300 border-amber-500/40",
+    validado: "bg-emerald-900/80 text-emerald-300 border-emerald-500/40",
+    rechazado: "bg-red-900/80 text-red-300 border-red-500/40"
+  };
+  const textMap = {
+    pendiente: "Pendiente",
+    validado: "Validado",
+    rechazado: "Rechazado"
+  };
+  const clase = map[estado] || "bg-slate-800 text-slate-200 border-slate-600/60";
+  const texto = textMap[estado] || estado;
+
+  return `<span class="inline-flex items-center px-2 py-0.5 rounded-full border text-[11px] ${clase}">${texto}</span>`;
+}
+
+function formatearMonto(monto) {
+  if (monto == null) return "";
+  const num = Number(monto);
+  if (isNaN(num)) return monto;
+  return num.toLocaleString("es-CL") + " CLP";
+}
+
+// Filtro buscador
+function filtrarTabla() {
+  const valor = document.getElementById("buscador").value;
+  state.filtro = valor;
+  renderTabla();
+}
+
+// Modal crear/editar
+function abrirModalCrear() {
+  document.getElementById("modal-titulo").textContent = "Nueva calificación";
+  document.getElementById("calificacion-id").value = "";
+  document.getElementById("modal-error").classList.add("hidden");
+  document.getElementById("modal-error").textContent = "";
+
+  // Defaults
+  if (state.users.length > 0) {
+    document.getElementById("campo-usuario").value = state.users[0].id;
+  }
+  document.getElementById("campo-monto").value = "";
+  document.getElementById("campo-tipo").value = "abono";
+  document.getElementById("campo-estado").value = "pendiente";
+  document.getElementById("campo-fecha").value = new Date().toISOString().slice(0, 10);
+
+  mostrarModal();
+}
+
+function abrirModalEditar(id) {
+  const c = state.calificaciones.find(x => x.id === id);
+  if (!c) return;
+
+  document.getElementById("modal-titulo").textContent = `Editar calificación #${id}`;
+  document.getElementById("calificacion-id").value = id;
+  document.getElementById("modal-error").classList.add("hidden");
+  document.getElementById("modal-error").textContent = "";
+
+  const usuarioId = extraerIdDeCampoUsuario(c.usuario);
+  if (usuarioId) {
+    document.getElementById("campo-usuario").value = usuarioId;
+  }
+
+  document.getElementById("campo-monto").value = c.monto ?? "";
+  document.getElementById("campo-tipo").value = c.tipo_movimiento ?? "abono";
+  document.getElementById("campo-estado").value = c.estado ?? "pendiente";
+  document.getElementById("campo-fecha").value = c.fecha_registro ?? new Date().toISOString().slice(0, 10);
+
+  mostrarModal();
+}
+
+function mostrarModal() {
+  const overlay = document.getElementById("modal-overlay");
+  const card = document.getElementById("modal-card");
+  overlay.classList.remove("hidden");
+  // pequeña animación
+  requestAnimationFrame(() => {
+    card.classList.remove("scale-95", "opacity-0");
+    card.classList.add("scale-100", "opacity-100");
+  });
+}
+
+function cerrarModal() {
+  const overlay = document.getElementById("modal-overlay");
+  const card = document.getElementById("modal-card");
+  card.classList.add("scale-95", "opacity-0");
+  setTimeout(() => {
+    overlay.classList.add("hidden");
+  }, 150);
+}
+
+// Guardar (create/update)
+async function guardarCalificacion(event) {
+  event.preventDefault();
+  if (!state.token) {
+    alert("⚠ Debes iniciar sesión primero");
+    return;
+  }
+
+  const id = document.getElementById("calificacion-id").value;
+  const usuarioId = document.getElementById("campo-usuario").value;
+  const monto = document.getElementById("campo-monto").value;
+  const tipo = document.getElementById("campo-tipo").value;
+  const estado = document.getElementById("campo-estado").value;
+  const fecha = document.getElementById("campo-fecha").value;
+
+  const errorBox = document.getElementById("modal-error");
+
+  if (!monto || !usuarioId) {
+    errorBox.textContent = "Usuario y monto son obligatorios.";
+    errorBox.classList.remove("hidden");
+    return;
+  }
+
+  const payload = {
+    usuario: Number(usuarioId),
+    monto: monto,
+    tipo_movimiento: tipo,
+    estado: estado,
+    fecha_registro: fecha || new Date().toISOString().slice(0, 10)
+  };
+
+  try {
+    let url = `${API_URL}/api/Calificacion/`;
+    let method = "POST";
+
+    if (id) {
+      url = `${API_URL}/api/Calificacion/${id}/`;
+      method = "PUT";
+    }
+
+    const res = await fetch(url, {
+      method,
+      headers: {
+        "Authorization": "Bearer " + state.token,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      errorBox.textContent = "Error al guardar: " + JSON.stringify(data);
+      errorBox.classList.remove("hidden");
+      return;
+    }
+
+    // Refrescar lista
+    await cargarCalificaciones();
+    cerrarModal();
+  } catch (err) {
+    console.error(err);
+    errorBox.textContent = "Error inesperado al guardar (ver consola).";
+    errorBox.classList.remove("hidden");
+  }
+}
+
+// Confirm delete
+let idAEliminar = null;
+
+function abrirConfirm(id) {
+  idAEliminar = id;
+  setTexto("confirm-id", "#" + id);
+  mostrarElemento("confirm-overlay");
+
+  const btn = document.getElementById("btn-confirm-delete");
+  btn.onclick = async () => {
+    await eliminarCalificacion(idAEliminar);
+  };
+}
+
+function cerrarConfirm() {
+  ocultarElemento("confirm-overlay");
+  idAEliminar = null;
+}
+
+async function eliminarCalificacion(id) {
+  if (!state.token) {
+    alert("⚠ Debes iniciar sesión primero");
+    return;
+  }
+  try {
+    const res = await fetch(`${API_URL}/api/Calificacion/${id}/`, {
+      method: "DELETE",
+      headers: {
+        "Authorization": "Bearer " + state.token
+      }
+    });
+
+    if (!res.ok) {
+      alert("Error al eliminar (ver consola).");
+      console.error(await res.text());
+      return;
+    }
+
+    cerrarConfirm();
+    await cargarCalificaciones();
+  } catch (err) {
+    console.error("Error al eliminar:", err);
+    alert("Error de red al eliminar (ver consola).");
+  }
+}
+</script>
+
+</body>
+</html>
