@@ -268,7 +268,12 @@
     };
 
     // ✅ WebSocket correcto
-    const chatSocket = new WebSocket("ws://" + window.location.host + "/ws/chat/");
+    const protocolo = window.location.protocol === "https:" ? "wss" : "ws";
+
+    const chatSocket = new WebSocket(
+        protocolo + "://" + window.location.host + "/ws/chat/"
+    );
+
 
     // ✅ Recibir mensajes
     chatSocket.onmessage = function(e) {
