@@ -1,14 +1,10 @@
 import os
-
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'miles_project.settings')
-
-import django
-django.setup()
-
 from django.core.asgi import get_asgi_application
 from channels.routing import ProtocolTypeRouter, URLRouter
-from channels.auth import AuthMiddlewareStack   # ✅ IMPORT CORRECTO
+from channels.auth import AuthMiddlewareStack
 import calificaciones.routing
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "miles_project.settings")
 
 application = ProtocolTypeRouter({
     "http": get_asgi_application(),
