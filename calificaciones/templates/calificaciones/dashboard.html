@@ -102,10 +102,10 @@
                         </div>
 
                         <div class="d-flex align-items-center gap-2">
-
-                            <a href="{% url 'exportar_calificaciones_csv' %}" class="btn btn-sm btn-outline-success">⬇ CSV</a>
-                            <a href="{% url 'exportar_calificaciones_excel' %}" class="btn btn-sm btn-outline-primary">⬇ XLSX</a>
-                            <a href="{% url 'exportar_calificaciones_pdf' %}" class="btn btn-sm btn-outline-danger">⬇ PDF</a>
+                            <p>EXPORTAR A:</p>
+                            <a href="{% url 'exportar_calificaciones_csv' %}" class="btn btn-sm btn-outline-success">CSV</a>
+                            <a href="{% url 'exportar_calificaciones_excel' %}" class="btn btn-sm btn-outline-primary">XLSX</a>
+                            <a href="{% url 'exportar_calificaciones_pdf' %}" class="btn btn-sm btn-outline-danger">PDF</a>
 
                             <form method="get" class="d-flex align-items-center ms-2">
                                 <span class="me-2 small fw-semibold text-secondary">Ordenar por:</span>
