@@ -329,30 +329,56 @@ async function cargarUsuarios() {
 }
 
 // Cargar calificaciones
+// Cargar calificaciones
 async function cargarCalificaciones() {
   if (!state.token) {
     alert("⚠ Debes iniciar sesión primero");
     return;
   }
 
+  let todas = [];
+  let url = `${API_URL}/api/Calificacion/`;
+
   try {
-    const res = await fetch(`${API_URL}/api/Calificacion/`, {
-      headers: {
-        "Authorization": "Bearer " + state.token
+    while (url) {
+      const res = await fetch(url, {
+        headers: {
+          "Authorization": "Bearer " + state.token
+        }
+      });
+
+      if (!res.ok) {
+        throw new Error("Error al cargar calificaciones");
       }
-    });
 
-    const data = await res.json();
-    document.getElementById("resultado").textContent = JSON.stringify(data, null, 2);
+      const data = await res.json();
 
-    const results = Array.isArray(data) ? data : (data.results || []);
-    state.calificaciones = results;
+      todas = todas.concat(data.results || []);
+
+      // Normalizar paginación DRF (HTTP → HTTPS)
+      url = data.next
+        ? data.next.replace("http://", "https://")
+        : null;
+    }
+
+    // ✅ ORDEN CORRECTO
+    todas.sort((a, b) => a.id - b.id);
+
+    state.calificaciones = todas;
+
+    // Mostrar JSON consolidado
+    document.getElementById("resultado").textContent =
+      JSON.stringify(state.calificaciones, null, 2);
+
     renderTabla();
+
   } catch (err) {
-    console.error("Error cargando calificaciones:", err);
-    alert("Error al cargar calificaciones (ver consola).");
+    console.error(err);
+    alert("Error al cargar todas las calificaciones.");
   }
 }
+
+
 
 // Render tabla con filtro
 function renderTabla() {
@@ -576,13 +602,13 @@ async function guardarCalificacion(event) {
     return;
   }
 
-  const payload = {
-    usuario: Number(usuarioId),
-    monto: monto,
-    tipo_movimiento: tipo,
-    estado: estado,
-    fecha_registro: fecha || new Date().toISOString().slice(0, 10)
-  };
+const payload = {
+  usuario: `${API_URL}/api/users/${usuarioId}/`,
+  monto: monto,
+  tipo_movimiento: tipo,
+  estado: estado,
+  fecha_registro: fecha || new Date().toISOString().slice(0, 10)
+};
 
   try {
     let url = `${API_URL}/api/Calificacion/`;
