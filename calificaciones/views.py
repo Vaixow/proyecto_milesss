@@ -49,7 +49,7 @@ class CalificacionViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
 class ChatMessageViewSet(viewsets.ModelViewSet):
-    queryset = ChatMessage.objects.all().order_by("-timestamp")
+    queryset = ArchivoMasivo.objects.all().order_by("-timestamp")
     serializer_class = ChatMessageSerializer
     permission_classes = [permissions.IsAuthenticated]
     
