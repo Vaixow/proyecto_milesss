@@ -40,7 +40,7 @@ from .forms import CalificacionForm, ArchivoMasivoForm
 #SERIALIZERS
 from django.contrib.auth.models import Group, User
 from rest_framework import permissions, viewsets
-from .serializers import GroupSerializer, UserSerializer, CalificacionSerializer, AuditoriaSerializer, ArchivoMasivoSerializer, ChatMessageSerializer
+from .serializers import GroupSerializer, UserSerializer, CalificacionSerializer, AuditoriaSerializer, ArchivoMasivoSerializer
 
 
 class CalificacionViewSet(viewsets.ModelViewSet):
@@ -48,11 +48,6 @@ class CalificacionViewSet(viewsets.ModelViewSet):
     serializer_class = CalificacionSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-
-class ChatMessageViewSet(viewsets.ModelViewSet):
-    queryset = ChatMessage.object.all()
-    serializer_class = ChatMessageSerializer
-    permission_classes = [permissions.IsAuthenticated]
 
 class ArchivoMasivoViewSet(viewsets.ModelViewSet):
     queryset = ArchivoMasivo.objects.all().order_by("-fecha_carga")
