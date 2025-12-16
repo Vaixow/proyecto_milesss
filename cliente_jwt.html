@@ -107,6 +107,28 @@
           <pre id="resultado" class="mt-2 max-h-72 overflow-y-auto"></pre>
         </details>
       </section>
+      
+        <!-- CHAT WEBSOCKET -->
+    <section class="mt-6 bg-slate-800/80 border border-slate-700 rounded-xl p-4">
+      <h3 class="text-sm font-semibold text-indigo-300 mb-2">
+        💬 WebSocket en tiempo real
+      </h3>
+
+      <div id="chat-mensajes"
+          class="h-40 overflow-y-auto bg-slate-900 rounded-lg p-2 text-xs space-y-1 mb-2">
+        <p class="text-slate-500 italic">Esperando mensajes...</p>
+      </div>
+
+      <div class="flex gap-2">
+        <input id="chat-input"
+              class="flex-1 p-2 rounded-lg bg-slate-700 text-xs"
+              placeholder="Escribe un mensaje..." />
+        <button onclick="enviarMensajeChat()"
+                class="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-xs font-semibold">
+          Enviar
+        </button>
+      </div>
+    </section>
 
     </main>
   </div>
@@ -209,6 +231,41 @@ let state = {
 };
 
 // Utilidades
+function mostrarMensajeChat(usuario, mensaje) {
+  const contenedor = document.getElementById("chat-mensajes");
+
+  // Limpiar texto inicial
+  if (contenedor.children.length === 1 &&
+      contenedor.textContent.includes("Esperando")) {
+    contenedor.innerHTML = "";
+  }
+
+  const div = document.createElement("div");
+  div.innerHTML = `<strong class="text-emerald-300">${usuario}:</strong> ${mensaje}`;
+
+  contenedor.appendChild(div);
+  contenedor.scrollTop = contenedor.scrollHeight;
+}
+
+function enviarMensajeChat() {
+  if (!socket || socket.readyState !== WebSocket.OPEN) {
+    alert("WebSocket no conectado");
+    return;
+  }
+
+  const input = document.getElementById("chat-input");
+  const mensaje = input.value.trim();
+  if (!mensaje) return;
+
+  socket.send(JSON.stringify({
+    message: mensaje,
+    mode: "global"
+  }));
+
+  input.value = "";
+}
+
+
 function setTexto(id, texto) {
   document.getElementById(id).textContent = texto;
 }
@@ -246,6 +303,15 @@ async function login() {
       status.textContent = "✅ Login correcto";
       status.classList.remove("text-red-400");
       status.classList.add("text-emerald-400");
+      socket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      console.log("📩 Mensaje recibido:", data);
+
+      mostrarMensajeChat(
+        data.user || "Servidor",
+        data.message || JSON.stringify(data)
+      );
+    };
 
       // Mostrar panel de sesión
       document.getElementById("login-panel").classList.add("hidden");
@@ -269,16 +335,31 @@ async function login() {
 }
 
 function logout() {
+  // 🔌 Cerrar WebSocket si existe
+  if (socket) {
+    socket.close();
+    socket = null;
+    console.log("🔌 WebSocket cerrado por logout");
+  }
+
+  // 🔐 Limpiar estado
   state.token = null;
   state.currentUsername = null;
+
+  // 🧹 Limpiar storage
   localStorage.removeItem("nuam_token");
   localStorage.removeItem("nuam_user");
+
+  // 🧼 Limpiar UI
   document.getElementById("user-info-panel").classList.add("hidden");
   document.getElementById("login-panel").classList.remove("hidden");
   setTexto("login-status", "");
   document.getElementById("resultado").textContent = "";
   document.getElementById("tabla-calificaciones").innerHTML = "";
+
+  console.log("🚪 Sesión cerrada correctamente");
 }
+
 
 // Cargar token desde localStorage al entrar
 (async function initFromStorage() {
@@ -691,6 +772,43 @@ async function eliminarCalificacion(id) {
     alert("Error de red al eliminar (ver consola).");
   }
 }
+
+let socket = null;
+
+function conectarWebSocket() {
+  if (!state.token) {
+    console.warn("No hay token JWT, no se conecta WebSocket");
+    return;
+  }
+
+  const protocol = location.protocol === "https:" ? "wss" : "ws";
+  const wsUrl = `${protocol}://proyecto-milesss.onrender.com/ws/chat/?token=${state.token}`;
+
+  socket = new WebSocket(wsUrl);
+
+  socket.onopen = () => {
+    console.log("✅ WebSocket conectado");
+  };
+
+  socket.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    console.log("📩 Mensaje recibido:", data);
+
+    // Aquí puedes:
+    // - Mostrar mensaje en un chat
+    // - Lanzar notificación
+    // - Actualizar UI en tiempo real
+  };
+
+  socket.onclose = () => {
+    console.warn("❌ WebSocket cerrado");
+  };
+
+  socket.onerror = (err) => {
+    console.error("⚠ Error WebSocket:", err);
+  };
+}
+
 </script>
 
 </body>
