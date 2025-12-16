@@ -42,31 +42,6 @@ from django.contrib.auth.models import Group, User
 from rest_framework import permissions, viewsets
 from .serializers import GroupSerializer, UserSerializer, CalificacionSerializer, AuditoriaSerializer, ArchivoMasivoSerializer
 
-from rest_framework import viewsets, permissions
-from django.db.models import Q
-from .models import ChatMessage
-from .serializers import ChatMessageSerializer
-
-
-class ChatMessageViewSet(viewsets.ReadOnlyModelViewSet):
-    serializer_class = ChatMessageSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        user = self.request.user
-        target = self.request.query_params.get("target")
-
-        if target:
-            return ChatMessage.objects.filter(
-                Q(user=user, target__username=target) |
-                Q(user__username=target, target=user)
-            ).order_by("timestamp")
-
-        return ChatMessage.objects.filter(
-            mode="global"
-        ).order_by("timestamp")
-
-
 
 class CalificacionViewSet(viewsets.ModelViewSet):
     queryset = Calificacion.objects.all().order_by("id")

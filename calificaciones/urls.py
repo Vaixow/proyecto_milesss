@@ -13,13 +13,6 @@ router.register(r"Auditoria", views.AuditoriaViewSet)
 
 
 
-router.register(
-    r"chat/messages",
-    views.ChatMessageViewSet,
-    basename="chat"
-)
-
-
 
 urlpatterns = [
         # Rutas JWT
@@ -43,6 +36,6 @@ urlpatterns = [
     path('exportar/excel/', views.exportar_calificaciones_excel, name='exportar_calificaciones_excel'),
     path('exportar/pdf/', views.exportar_calificaciones_pdf, name='exportar_calificaciones_pdf'),
     path("chat/mensajes/", views.cargar_mensajes, name="cargar_mensajes"),
-    
+
 
 ]
