@@ -9,7 +9,6 @@ from django.contrib.auth.models import User
 from .models import ChatMessage
 
 
-
 import csv
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
@@ -49,18 +48,11 @@ class CalificacionViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
 
-<<<<<<< HEAD
-class ChatMessageViewSet(viewsets.ModelViewSet):
-    queryset = ChatMessage.objects.all()
-    serializer_class = ChatMessageSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-=======
->>>>>>> parent of 4cea81d (Reapply "JEJEJEJEJE MENSAJES EN LA API")
 class ArchivoMasivoViewSet(viewsets.ModelViewSet):
     queryset = ArchivoMasivo.objects.all().order_by("-fecha_carga")
     serializer_class = ArchivoMasivoSerializer
     permission_classes = [permissions.IsAuthenticated]
+
 
 
 class AuditoriaViewSet(viewsets.ModelViewSet):
