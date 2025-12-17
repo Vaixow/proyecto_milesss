@@ -13,4 +13,6 @@ openpyxl
 channels
 channels_redis
 daphne
-uvicorn
+uvicorn[standard]
+websockets
+wsproto
