@@ -195,88 +195,12 @@
     </div>
   </div>
 
-  <!-- 💬 BOTÓN FLOTANTE CHAT -->
-  <button
-    id="chat-toggle"
-    class="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-indigo-600 hover:bg-indigo-700 shadow-xl flex items-center justify-center text-2xl transition active:scale-95"
-  >
-    💬
-  </button>
-
-  <!-- 💬 VENTANA DEL CHAT -->
-  <div
-    id="chat-box"
-    class="hidden fixed bottom-24 right-6 z-50 w-80 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl flex flex-col"
-  >
-    <!-- Header -->
-    <div class="flex items-center justify-between px-4 py-2 bg-indigo-600 rounded-t-2xl">
-      <span class="text-sm font-semibold text-white">💬 Chat NUAM</span>
-      <div class="flex gap-1">
-        <button id="minimize-chat" class="text-white hover:text-slate-200 text-sm">—</button>
-        <button id="close-chat" class="text-white hover:text-red-300 text-sm">✕</button>
-      </div>
-    </div>
-
-    <!-- Body -->
-    <div class="p-3 space-y-2 text-sm">
-      <!-- Modo -->
-      <select
-        id="chat-mode"
-        class="w-full p-1.5 rounded bg-slate-800 border border-slate-600 text-xs"
-      >
-        <option value="global">🌍 Chat Global</option>
-        <option value="private">👤 Chat Privado</option>
-      </select>
-
-      <!-- Usuario destino -->
-      <select
-        id="chat-user"
-        class="hidden w-full p-1.5 rounded bg-slate-800 border border-slate-600 text-xs"
-      >
-        <!-- Se llena dinámicamente -->
-      </select>
-
-      <!-- Mensajes -->
-      <div
-        id="chat-log"
-        class="h-48 overflow-y-auto bg-slate-800/60 border border-slate-700 rounded p-2 text-xs space-y-1"
-      ></div>
-
-      <!-- Input -->
-      <div class="flex gap-1">
-        <input
-          id="chat-message-input"
-          type="text"
-          class="flex-1 p-1.5 rounded bg-slate-800 border border-slate-600 text-xs"
-          placeholder="Escribe un mensaje..."
-        >
-        <button
-          id="chat-message-submit"
-          class="px-3 rounded bg-emerald-600 hover:bg-emerald-700 text-xs font-semibold"
-        >
-          Enviar
-        </button>
-      </div>
-    </div>
-  </div>
-
 <script>
-/* =========================
-   ✅ CONFIG / WS URL FIX
-   ========================= */
-
-function getWebSocketURL() {
-  // Usa el host del API (NO el host del HTML), así funciona aunque el HTML se sirva en otro dominio.
-  const api = new URL(API_URL);
-  const protocol = api.protocol === "https:" ? "wss" : "ws";
-  return `${protocol}://${api.host}/ws/chat/`;
-}
-
 // 👉 Cambia esto si quieres probar en local:
 // const API_URL = "http://127.0.0.1:8000";
 const API_URL = "https://proyecto-milesss.onrender.com";
 
-let state  = {
+let state = {
   token: null,
   currentUsername: null,
   users: [],
@@ -284,29 +208,20 @@ let state  = {
   filtro: ""
 };
 
-let socket = null;
-
-/* =========================
-   ✅ UTILIDADES UI
-   ========================= */
+// Utilidades
 function setTexto(id, texto) {
-  const el = document.getElementById(id);
-  if (el) el.textContent = texto;
+  document.getElementById(id).textContent = texto;
 }
 
 function mostrarElemento(id) {
-  const el = document.getElementById(id);
-  if (el) el.classList.remove("hidden");
+  document.getElementById(id).classList.remove("hidden");
 }
 
 function ocultarElemento(id) {
-  const el = document.getElementById(id);
-  if (el) el.classList.add("hidden");
+  document.getElementById(id).classList.add("hidden");
 }
 
-/* =========================
-   ✅ LOGIN JWT
-   ========================= */
+// LOGIN JWT
 async function login() {
   const username = document.getElementById("username").value.trim();
   const password = document.getElementById("password").value.trim();
@@ -340,8 +255,6 @@ async function login() {
 
       await cargarUsuarios();
       await cargarCalificaciones();
-      conectarWebSocket();
-      actualizarUsuariosChat();
     } else {
       status.textContent = "❌ Credenciales inválidas";
       status.classList.remove("text-emerald-400");
@@ -360,25 +273,14 @@ function logout() {
   state.currentUsername = null;
   localStorage.removeItem("nuam_token");
   localStorage.removeItem("nuam_user");
-
   document.getElementById("user-info-panel").classList.add("hidden");
   document.getElementById("login-panel").classList.remove("hidden");
-
   setTexto("login-status", "");
   document.getElementById("resultado").textContent = "";
   document.getElementById("tabla-calificaciones").innerHTML = "";
-  state.calificaciones = [];
-  state.users = [];
-
-  if (socket) {
-    socket.close();
-    socket = null;
-  }
 }
 
-/* =========================
-   ✅ INIT: TOKEN DESDE STORAGE
-   ========================= */
+// Cargar token desde localStorage al entrar
 (async function initFromStorage() {
   const savedToken = localStorage.getItem("nuam_token");
   const savedUser = localStorage.getItem("nuam_user");
@@ -393,23 +295,22 @@ function logout() {
 
     await cargarUsuarios();
     await cargarCalificaciones();
-    conectarWebSocket();
-    actualizarUsuariosChat();
   }
 })();
 
-/* =========================
-   ✅ USERS
-   ========================= */
+// Cargar usuarios para el select
 async function cargarUsuarios() {
   if (!state.token) return;
 
   try {
     const res = await fetch(`${API_URL}/api/users/`, {
-      headers: { "Authorization": "Bearer " + state.token }
+      headers: {
+        "Authorization": "Bearer " + state.token
+      }
     });
 
     const data = await res.json();
+    // Manejar posible paginación
     const results = Array.isArray(data) ? data : (data.results || []);
     state.users = results;
 
@@ -427,9 +328,8 @@ async function cargarUsuarios() {
   }
 }
 
-/* =========================
-   ✅ CALIFICACIONES (PAGINADAS)
-   ========================= */
+// Cargar calificaciones
+// Cargar calificaciones
 async function cargarCalificaciones() {
   if (!state.token) {
     alert("⚠ Debes iniciar sesión primero");
@@ -442,7 +342,9 @@ async function cargarCalificaciones() {
   try {
     while (url) {
       const res = await fetch(url, {
-        headers: { "Authorization": "Bearer " + state.token }
+        headers: {
+          "Authorization": "Bearer " + state.token
+        }
       });
 
       if (!res.ok) {
@@ -451,33 +353,34 @@ async function cargarCalificaciones() {
 
       const data = await res.json();
 
-      // Soporta tanto DRF paginado como lista directa
-      if (Array.isArray(data)) {
-        todas = todas.concat(data);
-        url = null;
-      } else {
-        todas = todas.concat(data.results || []);
-        url = data.next ? data.next.replace("http://", "https://") : null;
-      }
+      todas = todas.concat(data.results || []);
+
+      // Normalizar paginación DRF (HTTP → HTTPS)
+      url = data.next
+        ? data.next.replace("http://", "https://")
+        : null;
     }
 
-    // ✅ ORDEN ESTABLE
-    todas.sort((a, b) => (a.id ?? 0) - (b.id ?? 0));
+    // ✅ ORDEN CORRECTO
+    todas.sort((a, b) => a.id - b.id);
+
     state.calificaciones = todas;
 
+    // Mostrar JSON consolidado
     document.getElementById("resultado").textContent =
       JSON.stringify(state.calificaciones, null, 2);
 
     renderTabla();
+
   } catch (err) {
     console.error(err);
     alert("Error al cargar todas las calificaciones.");
   }
 }
 
-/* =========================
-   ✅ RENDER TABLA + FILTRO
-   ========================= */
+
+
+// Render tabla con filtro
 function renderTabla() {
   const tbody = document.getElementById("tabla-calificaciones");
   tbody.innerHTML = "";
@@ -520,6 +423,7 @@ function renderTabla() {
     const usuarioId = extraerIdDeCampoUsuario(c.usuario);
     const username = usuariosPorId[usuarioId] || `ID ${usuarioId}`;
 
+    // Badges
     const tipoBadge = crearBadgeTipo(c.tipo_movimiento);
     const estadoBadge = crearBadgeEstado(c.estado);
 
@@ -553,6 +457,7 @@ function renderTabla() {
 
 function extraerIdDeCampoUsuario(usuarioCampo) {
   if (!usuarioCampo) return null;
+  // Puede ser número o URL tipo /api/users/1/
   if (typeof usuarioCampo === "number") return usuarioCampo;
   if (typeof usuarioCampo === "string") {
     const partes = usuarioCampo.split("/").filter(Boolean);
@@ -577,7 +482,7 @@ function crearBadgeTipo(tipo) {
     reembolso: "REEMBOLSO"
   };
   const clase = map[tipo] || "bg-slate-800 text-slate-200 border-slate-600/60";
-  const texto = textMap[tipo] || (tipo ?? "");
+  const texto = textMap[tipo] || tipo;
 
   return `<span class="inline-flex items-center px-2 py-0.5 rounded-full border text-[11px] ${clase}">${texto}</span>`;
 }
@@ -594,7 +499,7 @@ function crearBadgeEstado(estado) {
     rechazado: "Rechazado"
   };
   const clase = map[estado] || "bg-slate-800 text-slate-200 border-slate-600/60";
-  const texto = textMap[estado] || (estado ?? "");
+  const texto = textMap[estado] || estado;
 
   return `<span class="inline-flex items-center px-2 py-0.5 rounded-full border text-[11px] ${clase}">${texto}</span>`;
 }
@@ -606,21 +511,21 @@ function formatearMonto(monto) {
   return num.toLocaleString("es-CL") + " CLP";
 }
 
+// Filtro buscador
 function filtrarTabla() {
   const valor = document.getElementById("buscador").value;
   state.filtro = valor;
   renderTabla();
 }
 
-/* =========================
-   ✅ MODAL CREAR / EDITAR
-   ========================= */
+// Modal crear/editar
 function abrirModalCrear() {
   document.getElementById("modal-titulo").textContent = "Nueva calificación";
   document.getElementById("calificacion-id").value = "";
   document.getElementById("modal-error").classList.add("hidden");
   document.getElementById("modal-error").textContent = "";
 
+  // Defaults
   if (state.users.length > 0) {
     document.getElementById("campo-usuario").value = state.users[0].id;
   }
@@ -658,6 +563,7 @@ function mostrarModal() {
   const overlay = document.getElementById("modal-overlay");
   const card = document.getElementById("modal-card");
   overlay.classList.remove("hidden");
+  // pequeña animación
   requestAnimationFrame(() => {
     card.classList.remove("scale-95", "opacity-0");
     card.classList.add("scale-100", "opacity-100");
@@ -673,9 +579,7 @@ function cerrarModal() {
   }, 150);
 }
 
-/* =========================
-   ✅ GUARDAR (CREATE/UPDATE)
-   ========================= */
+// Guardar (create/update)
 async function guardarCalificacion(event) {
   event.preventDefault();
   if (!state.token) {
@@ -698,13 +602,13 @@ async function guardarCalificacion(event) {
     return;
   }
 
-  const payload = {
-    usuario: `${API_URL}/api/users/${usuarioId}/`,
-    monto: monto,
-    tipo_movimiento: tipo,
-    estado: estado,
-    fecha_registro: fecha || new Date().toISOString().slice(0, 10)
-  };
+const payload = {
+  usuario: `${API_URL}/api/users/${usuarioId}/`,
+  monto: monto,
+  tipo_movimiento: tipo,
+  estado: estado,
+  fecha_registro: fecha || new Date().toISOString().slice(0, 10)
+};
 
   try {
     let url = `${API_URL}/api/Calificacion/`;
@@ -732,6 +636,7 @@ async function guardarCalificacion(event) {
       return;
     }
 
+    // Refrescar lista
     await cargarCalificaciones();
     cerrarModal();
   } catch (err) {
@@ -741,9 +646,7 @@ async function guardarCalificacion(event) {
   }
 }
 
-/* =========================
-   ✅ DELETE CONFIRM
-   ========================= */
+// Confirm delete
 let idAEliminar = null;
 
 function abrirConfirm(id) {
@@ -770,7 +673,9 @@ async function eliminarCalificacion(id) {
   try {
     const res = await fetch(`${API_URL}/api/Calificacion/${id}/`, {
       method: "DELETE",
-      headers: { "Authorization": "Bearer " + state.token }
+      headers: {
+        "Authorization": "Bearer " + state.token
+      }
     });
 
     if (!res.ok) {
@@ -786,178 +691,6 @@ async function eliminarCalificacion(id) {
     alert("Error de red al eliminar (ver consola).");
   }
 }
-
-/* =========================
-   ✅ WEBSOCKET
-   ========================= */
-function conectarWebSocket() {
-  if (socket) return;
-
-  const wsUrl = getWebSocketURL();
-  socket = new WebSocket(wsUrl);
-
-  socket.onopen = () => {
-    console.log("🟢 WebSocket conectado:", wsUrl);
-  };
-
-  socket.onmessage = (event) => {
-    try {
-      const data = JSON.parse(event.data);
-      manejarEventoWS(data);
-    } catch (e) {
-      console.error("Mensaje WS inválido:", event.data);
-    }
-  };
-
-  socket.onclose = () => {
-    console.warn("🔴 WebSocket desconectado");
-    socket = null;
-
-    setTimeout(() => {
-      if (state.token) conectarWebSocket();
-    }, 3000);
-  };
-
-  socket.onerror = (err) => {
-    console.error("Error WebSocket:", err);
-  };
-}
-
-function manejarEventoWS(data) {
-  console.log("📡 Evento WS:", data);
-
-  switch (data.type) {
-    case "calificacion_created":
-      state.calificaciones.push(data.payload);
-      state.calificaciones.sort((a, b) => (a.id ?? 0) - (b.id ?? 0));
-      renderTabla();
-      break;
-
-    case "calificacion_updated":
-      state.calificaciones = state.calificaciones.map(c =>
-        c.id === data.payload.id ? data.payload : c
-      );
-      state.calificaciones.sort((a, b) => (a.id ?? 0) - (b.id ?? 0));
-      renderTabla();
-      break;
-
-    case "calificacion_deleted":
-      state.calificaciones = state.calificaciones.filter(
-        c => c.id !== data.payload.id
-      );
-      renderTabla();
-      break;
-
-    case "chat_message":
-      agregarMensajeChat(
-        data.payload.user,
-        data.payload.message,
-        data.payload.mode
-      );
-      break;
-
-    default:
-      console.warn("Evento WS desconocido:", data);
-  }
-}
-
-/* =========================
-   💬 CHAT UI (FIX: INIT DESPUÉS DEL DOM)
-   ========================= */
-function agregarMensajeChat(user, message, mode) {
-  const log = document.getElementById("chat-log");
-  if (!log) return;
-
-  const div = document.createElement("div");
-  div.innerHTML = `
-    <span class="font-semibold text-indigo-300">${user}</span>:
-    <span class="text-slate-200">${message}</span>
-  `;
-  log.appendChild(div);
-  log.scrollTop = log.scrollHeight;
-}
-
-function actualizarUsuariosChat() {
-  const select = document.getElementById("chat-user");
-  if (!select) return;
-
-  select.innerHTML = "";
-
-  state.users.forEach(u => {
-    if (u.username !== state.currentUsername) {
-      const opt = document.createElement("option");
-      opt.value = u.username;
-      opt.textContent = u.username;
-      select.appendChild(opt);
-    }
-  });
-}
-
-function initChatUI() {
-  const chatToggleBtn = document.getElementById("chat-toggle");
-  const chatBox = document.getElementById("chat-box");
-  const closeChatBtn = document.getElementById("close-chat");
-  const minimizeChatBtn = document.getElementById("minimize-chat");
-
-  const chatModeSelect = document.getElementById("chat-mode");
-  const chatUserSelect = document.getElementById("chat-user");
-  const chatSubmitBtn = document.getElementById("chat-message-submit");
-  const chatInput = document.getElementById("chat-message-input");
-
-  if (!chatToggleBtn || !chatBox || !chatModeSelect || !chatUserSelect || !chatSubmitBtn || !chatInput) {
-    console.warn("Chat UI no encontrado (IDs faltantes).");
-    return;
-  }
-
-  chatToggleBtn.onclick = () => {
-    chatBox.classList.toggle("hidden");
-  };
-
-  if (closeChatBtn) closeChatBtn.onclick = () => chatBox.classList.add("hidden");
-  if (minimizeChatBtn) minimizeChatBtn.onclick = () => chatBox.classList.add("hidden");
-
-  chatModeSelect.onchange = () => {
-    if (chatModeSelect.value === "private") {
-      chatUserSelect.classList.remove("hidden");
-    } else {
-      chatUserSelect.classList.add("hidden");
-    }
-  };
-
-  chatSubmitBtn.onclick = () => {
-    const message = chatInput.value.trim();
-    if (!message || !socket) return;
-
-    const payload = {
-      action: "chat_message",
-      mode: chatModeSelect.value,
-      to: chatUserSelect.value || null,
-      message: message
-    };
-
-    socket.send(JSON.stringify(payload));
-    chatInput.value = "";
-  };
-
-  // Enviar con Enter (opcional, sin cambiar tu idea)
-  chatInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      chatSubmitBtn.click();
-    }
-  });
-
-  // Estado inicial del select destino
-  if (chatModeSelect.value !== "private") {
-    chatUserSelect.classList.add("hidden");
-  }
-
-  actualizarUsuariosChat();
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-  initChatUI();
-});
 </script>
 
 </body>
