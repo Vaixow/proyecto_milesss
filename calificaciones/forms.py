@@ -43,3 +43,5 @@ class ArchivoMasivoForm(forms.Form):
         help_text='Sube tu archivo con el listado de calificaciones.',
         widget=forms.FileInput(attrs={'class': 'form-control'})
     )   
+
+    
