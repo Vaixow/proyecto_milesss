@@ -50,7 +50,7 @@ class CalificacionViewSet(viewsets.ModelViewSet):
 
 
 class ChatMessageViewSet(viewsets.ModelViewSet):
-    queryset = ChatMessage.object.all()
+    queryset = ChatMessage.objects.all()
     serializer_class = ChatMessageSerializer
     permission_classes = [permissions.IsAuthenticated]
 
