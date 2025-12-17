@@ -40,7 +40,7 @@ from .forms import CalificacionForm, ArchivoMasivoForm
 #SERIALIZERS
 from django.contrib.auth.models import Group, User
 from rest_framework import permissions, viewsets
-from .serializers import GroupSerializer, UserSerializer, CalificacionSerializer, AuditoriaSerializer, ArchivoMasivoSerializer, ChatMessageSerializer
+from .serializers import GroupSerializer, UserSerializer, CalificacionSerializer, AuditoriaSerializer, ArchivoMasivoSerializer
 
 
 class CalificacionViewSet(viewsets.ModelViewSet):
@@ -49,11 +49,14 @@ class CalificacionViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
 
+<<<<<<< HEAD
 class ChatMessageViewSet(viewsets.ModelViewSet):
     queryset = ChatMessage.objects.all()
     serializer_class = ChatMessageSerializer
     permission_classes = [permissions.IsAuthenticated]
 
+=======
+>>>>>>> parent of 4cea81d (Reapply "JEJEJEJEJE MENSAJES EN LA API")
 class ArchivoMasivoViewSet(viewsets.ModelViewSet):
     queryset = ArchivoMasivo.objects.all().order_by("-fecha_carga")
     serializer_class = ArchivoMasivoSerializer

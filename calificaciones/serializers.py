@@ -1,6 +1,6 @@
 from django.contrib.auth.models import Group, User
 from rest_framework import serializers
-from .models import ArchivoMasivo, Auditoria, Calificacion, ChatMessage
+from .models import ArchivoMasivo, Auditoria, Calificacion
 
 class CalificacionSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
@@ -13,19 +13,6 @@ class CalificacionSerializer(serializers.HyperlinkedModelSerializer):
             "tipo_movimiento",
             "estado",
             "fecha_registro",
-        ]
-
-class ChatMessageSerializer(serializers.HyperlinkedModelSerializer):
-    class Meta:
-        model = ChatMessage
-        fields =[
-            "user",
-            "target",
-            "message",
-            "mode",
-            "timestamp",
-
-
         ]
 
 
