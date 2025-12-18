@@ -12,7 +12,6 @@ reportlab
 openpyxl
 channels
 channels_redis
-daphne
 uvicorn[standard]
 websockets
 wsproto
