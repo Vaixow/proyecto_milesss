@@ -1,17 +1,10 @@
-# calificaciones/consumers.py
-
 import json
 
 from channels.generic.websocket import AsyncWebsocketConsumer
-
 from asgiref.sync import sync_to_async
 
 
-
-
 class ChatConsumer(AsyncWebsocketConsumer):
-    from django.contrib.auth.models import User
-    from .models import ChatMessage
 
     async def connect(self):
         await self.accept()
@@ -62,6 +55,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     @sync_to_async
     def guardar_mensaje(self, message, mode, target):
+        # ⬇️ IMPORTS SOLO AQUÍ, NUNCA ARRIBA NI EN LA CLASE
+        from django.contrib.auth.models import User
+        from .models import ChatMessage
+
         if mode == "private" and target:
             receptor = User.objects.get(username=target)
             ChatMessage.objects.create(
