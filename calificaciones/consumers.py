@@ -1,14 +1,3 @@
-# calificaciones/consumers.py
-
-import json
-
-from channels.generic.websocket import AsyncWebsocketConsumer
-from django.contrib.auth.models import User
-from asgiref.sync import sync_to_async
-
-from .models import ChatMessage
-
-
 class ChatConsumer(AsyncWebsocketConsumer):
 
     async def connect(self):
@@ -31,7 +20,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     async def receive(self, text_data):
         data = json.loads(text_data)
-
         message = data.get("message")
         mode = data.get("mode", "global")
         target = data.get("target")
