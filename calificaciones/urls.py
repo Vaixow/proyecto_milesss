@@ -11,8 +11,6 @@ router.register(r"Calificacion", views.CalificacionViewSet)
 router.register(r"ArchivoMasivo", views.ArchivoMasivoViewSet)
 router.register(r"Auditoria", views.AuditoriaViewSet)
 
-router.register(r"Chats", views.ChatMessageViewSet)
-
 
 
 
