@@ -247,9 +247,8 @@ else:
 
 
 # Render / Proxy HTTPS fix
-# --- Render HTTPS FIX (OBLIGATORIO) ---
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 USE_X_FORWARDED_HOST = True
 
-# ⛔ IMPORTANTE: DESACTIVAR esto en Render
-SECURE_SSL_REDIRECT = False
+
+SECURE_SSL_REDIRECT = True
