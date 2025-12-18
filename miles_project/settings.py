@@ -253,6 +253,3 @@ USE_X_FORWARDED_HOST = True
 
 # ⛔ IMPORTANTE: DESACTIVAR esto en Render
 SECURE_SSL_REDIRECT = False
-
-
-STATIC_ROOT = BASE_DIR / "staticfiles"

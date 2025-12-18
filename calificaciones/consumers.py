@@ -1,4 +1,5 @@
 import json
+
 from channels.generic.websocket import AsyncWebsocketConsumer
 from asgiref.sync import sync_to_async
 
@@ -6,9 +7,9 @@ from asgiref.sync import sync_to_async
 class ChatConsumer(AsyncWebsocketConsumer):
 
     async def connect(self):
-        self.user = self.scope.get("user")
+        await self.accept()
 
-        # ❗ VALIDAR ANTES DE ACEPTAR
+        self.user = self.scope.get("user")
         if not self.user or not self.user.is_authenticated:
             await self.close()
             return
@@ -19,19 +20,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_add(self.global_group, self.channel_name)
         await self.channel_layer.group_add(self.private_group, self.channel_name)
 
-        await self.accept()
-
     async def disconnect(self, close_code):
-        if hasattr(self, "global_group"):
-            await self.channel_layer.group_discard(self.global_group, self.channel_name)
-        if hasattr(self, "private_group"):
-            await self.channel_layer.group_discard(self.private_group, self.channel_name)
+        await self.channel_layer.group_discard(self.global_group, self.channel_name)
+        await self.channel_layer.group_discard(self.private_group, self.channel_name)
 
     async def receive(self, text_data):
-        try:
-            data = json.loads(text_data)
-        except json.JSONDecodeError:
-            return
+        data = json.loads(text_data)
 
         message = data.get("message")
         mode = data.get("mode", "global")
@@ -61,16 +55,12 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     @sync_to_async
     def guardar_mensaje(self, message, mode, target):
-        # IMPORTS AQUÍ PARA EVITAR ERRORES DE CARGA ASGI
+        # ⬇️ IMPORTS SOLO AQUÍ, NUNCA ARRIBA NI EN LA CLASE
         from django.contrib.auth.models import User
         from .models import ChatMessage
 
         if mode == "private" and target:
-            try:
-                receptor = User.objects.get(username=target)
-            except User.DoesNotExist:
-                return
-
+            receptor = User.objects.get(username=target)
             ChatMessage.objects.create(
                 user=self.user,
                 target=receptor,
