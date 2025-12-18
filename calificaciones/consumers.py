@@ -1,10 +1,16 @@
+import json
+from channels.generic.websocket import AsyncWebsocketConsumer
+from django.contrib.auth.models import User
+from asgiref.sync import sync_to_async
+from .models import ChatMessage
+
+
 class ChatConsumer(AsyncWebsocketConsumer):
 
     async def connect(self):
-        await self.accept()
+        self.user = self.scope["user"]
 
-        self.user = self.scope.get("user")
-        if not self.user or not self.user.is_authenticated:
+        if not self.user.is_authenticated:
             await self.close()
             return
 
@@ -14,12 +20,15 @@ class ChatConsumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_add(self.global_group, self.channel_name)
         await self.channel_layer.group_add(self.private_group, self.channel_name)
 
+        await self.accept()
+
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(self.global_group, self.channel_name)
         await self.channel_layer.group_discard(self.private_group, self.channel_name)
 
     async def receive(self, text_data):
         data = json.loads(text_data)
+
         message = data.get("message")
         mode = data.get("mode", "global")
         target = data.get("target")
@@ -27,8 +36,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
         if not message:
             return
 
+        # ✅ GUARDAR MENSAJE EN BD
         await self.guardar_mensaje(message, mode, target)
 
+        # ✅ ENVIAR POR SOCKET
         payload = {
             "type": "chat_message",
             "message": message,
@@ -39,13 +50,15 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         if mode == "private" and target:
             await self.channel_layer.group_send(f"user_{target}", payload)
-            await self.channel_layer.group_send(self.private_group, payload)
+            await self.channel_layer.group_send(self.private_group, payload)  # ✅ eco para el emisor
+
         else:
             await self.channel_layer.group_send(self.global_group, payload)
 
     async def chat_message(self, event):
         await self.send(text_data=json.dumps(event))
 
+    # ✅ FUNCIÓN SEGURA PARA GUARDAR EN BD
     @sync_to_async
     def guardar_mensaje(self, message, mode, target):
         if mode == "private" and target:
